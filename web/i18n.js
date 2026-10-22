@@ -78,6 +78,11 @@ const I18N = {
 
       // Trimming
       trimTitle: '音频片段选择 (导出截取)',
+      timelineHint: '拖动两端高亮手柄自由截取片段，点击波形快速跳转播放。',
+      uploadBg: '🖼️ 上传背景图片',
+      toastNoAudio: '请先导入音频或点击「试听示例」！',
+      toastExportReady: '🎉 视频已成功生成，开始下载！',
+      pipLivePreview: '实时录制画面 (画中画)',
       trimStart: '起始时间',
       trimEnd: '结束时间',
       trimDuration: '截取总时长',
@@ -180,6 +185,11 @@ const I18N = {
 
       // Trimming
       trimTitle: 'Clip Selection (Trim for Export)',
+      timelineHint: 'Drag dual handles to trim clip seamlessly, or click waveform to seek.',
+      uploadBg: '🖼️ Upload Custom Background',
+      toastNoAudio: 'Please load audio or try the demo track first!',
+      toastExportReady: '🎉 Video rendered successfully! Starting download.',
+      pipLivePreview: 'Live Recording Stream (PiP)',
       trimStart: 'Start Time',
       trimEnd: 'End Time',
       trimDuration: 'Selected Duration',

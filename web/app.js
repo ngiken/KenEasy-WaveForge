@@ -1,6 +1,7 @@
 /**
- * KenEasy WaveForge - Application Orchestrator
- * Connects DOM events, AudioEngine, VisualizerRenderer, and VideoExporter.
+ * KenEasy WaveForge - Application Orchestrator (v1.1.0 High-Fidelity Edition)
+ * Connects DOM events, AudioEngine, VisualizerRenderer, VideoExporter,
+ * interactive dual-handle timeline, ObjectURL memory management, and Glass Toast system.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -36,16 +37,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleTimecode = document.getElementById('toggle-timecode');
   const toggleWatermark = document.getElementById('toggle-watermark');
 
-  // Timeline & Trimming
+  // Timeline & Dual-Handle Trimming Elements
+  const timelineWrapper = document.getElementById('timeline-wrapper');
   const timelineCanvas = document.getElementById('timeline-canvas');
+  const trimMaskStart = document.getElementById('trim-mask-start');
+  const trimMaskEnd = document.getElementById('trim-mask-end');
+  const trimHandleStart = document.getElementById('trim-handle-start');
+  const trimHandleEnd = document.getElementById('trim-handle-end');
+  const timelinePlayhead = document.getElementById('timeline-playhead');
+
   const trimStartInput = document.getElementById('trim-start');
   const trimEndInput = document.getElementById('trim-end');
   const trimDurationDisplay = document.getElementById('trim-duration-display');
   const btnResetTrim = document.getElementById('btn-reset-trim');
   const btnPlaySelection = document.getElementById('btn-play-selection');
 
-  // Export Modal
+  // Export Modal & PiP
   const exportModal = document.getElementById('export-modal');
+  const pipCanvas = document.getElementById('pip-canvas');
   const exportProgressFill = document.getElementById('export-progress-fill');
   const exportProgressText = document.getElementById('export-progress-text');
   const exportEtaText = document.getElementById('export-eta-text');
@@ -54,11 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDownloadVideo = document.getElementById('btn-download-video');
   const btnCloseModal = document.getElementById('btn-close-modal');
 
+  // Toast Container
+  const toastContainer = document.getElementById('toast-container');
+
   // Audio Meta Info
   const audioInfoBar = document.getElementById('audio-info-bar');
   const audioNameEl = document.getElementById('audio-name');
   const audioDurationEl = document.getElementById('audio-duration');
   const btnClearAudio = document.getElementById('btn-clear-audio');
+
+  // ObjectURL Memory Trackers
+  let currentBgObjectUrl = null;
+  let currentCoverObjectUrl = null;
+  let exportedVideoResult = null;
 
   // 3. Engine Instances
   const audioEngine = new AudioEngine();
@@ -67,12 +84,28 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas,
     audioEngine,
     renderer,
+    pipCanvas,
   });
 
-  let exportedVideoResult = null;
-  let isDraggingTimeline = false;
+  // 4. Glass Toast Helper
+  function showToast(message, type = 'info') {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = `glass-toast ${type === 'error' ? 'toast-error' : type === 'success' ? 'toast-success' : ''}`;
+    const icon = type === 'error' ? '⚠️' : type === 'success' ? '✨' : '💡';
+    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    toastContainer.appendChild(toast);
 
-  // 4. Set Initial Setup
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(12px) scale(0.95)';
+      setTimeout(() => {
+        if (toast.parentElement) toast.parentElement.removeChild(toast);
+      }, 320);
+    }, 3200);
+  }
+
+  // 5. Set Initial Setup
   function applyRatio(ratioId) {
     const config = CONFIG.ASPECT_RATIOS[ratioId] || CONFIG.ASPECT_RATIOS['9:16'];
     renderer.setDimensions(config.width, config.height, ratioId);
@@ -95,8 +128,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applyRatio('9:16');
 
-  // 5. Main Canvas Animation Loop
+  // 6. Main Canvas Animation Loop with Battery/Background Conservation
+  let isPageVisible = true;
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+  });
+
   function animationLoop() {
+    // In background tab and paused: throttle loop to save CPU/battery
+    if (!isPageVisible && !audioEngine.isPlaying && !exporter.isRecording) {
+      setTimeout(() => requestAnimationFrame(animationLoop), 250);
+      return;
+    }
+
     const freqData = audioEngine.getFrequencyData();
     const timeData = audioEngine.getTimeDomainData();
     const currentTime = audioEngine.getCurrentTime();
@@ -111,28 +155,27 @@ document.addEventListener('DOMContentLoaded', () => {
       isPlaying,
     });
 
-    // Update Timeline Playhead
-    if (audioEngine.duration > 0 && !isDraggingTimeline) {
-      renderTimelinePlayhead(currentTime);
+    // Update Timeline Playhead position
+    if (audioEngine.duration > 0 && !activeHandle) {
+      updateTimelinePlayhead(currentTime);
     }
 
     requestAnimationFrame(animationLoop);
   }
   requestAnimationFrame(animationLoop);
 
-  // 6. Timeline Rendering
+  // 7. Timeline Waveform & Dual-Handle Interactive Trimming
   function drawTimelineWaveform() {
     if (!timelineCanvas) return;
     const ctx = timelineCanvas.getContext('2d');
     const w = timelineCanvas.width = timelineCanvas.parentElement.clientWidth || 300;
-    const h = timelineCanvas.height = 48;
+    const h = timelineCanvas.height = 52;
 
-    ctx.fillStyle = 'rgba(24, 27, 33, 0.7)';
+    ctx.fillStyle = 'rgba(24, 27, 33, 0.75)';
     ctx.fillRect(0, 0, w, h);
 
     const peaks = audioEngine.peaks;
     if (!peaks || peaks.length === 0) {
-      // Draw placeholder dashed line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -146,40 +189,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const barW = Math.max(1, w / peaks.length);
     const theme = renderer.getTheme();
 
-    // Waveform bars
+    // Waveform peak bars
     ctx.fillStyle = `${theme.primary}aa`;
     for (let i = 0; i < peaks.length; i++) {
-      const barH = Math.max(2, peaks[i] * (h * 0.85));
+      const barH = Math.max(2, peaks[i] * (h * 0.82));
       const x = i * barW;
       const y = (h - barH) / 2;
       ctx.fillRect(x, y, barW - 1, barH);
     }
 
-    // Shade outside trim area
-    const startX = (audioEngine.trimStart / audioEngine.duration) * w;
-    const endX = (audioEngine.trimEnd / audioEngine.duration) * w;
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-    ctx.fillRect(0, 0, startX, h);
-    ctx.fillRect(endX, 0, w - endX, h);
-
-    // Trim handles
-    ctx.fillStyle = theme.secondary;
-    ctx.fillRect(startX - 2, 0, 4, h);
-    ctx.fillRect(endX - 2, 0, 4, h);
+    updateHandlesFromEngine();
   }
 
-  function renderTimelinePlayhead(currentTime) {
-    if (!timelineCanvas || audioEngine.duration <= 0) return;
-    drawTimelineWaveform();
+  function updateHandlesFromEngine() {
+    if (audioEngine.duration <= 0) {
+      trimMaskStart.style.width = '0%';
+      trimMaskEnd.style.width = '0%';
+      trimHandleStart.style.left = '0%';
+      trimHandleEnd.style.left = '100%';
+      return;
+    }
 
-    const ctx = timelineCanvas.getContext('2d');
-    const w = timelineCanvas.width;
-    const h = timelineCanvas.height;
-    const playheadX = (currentTime / audioEngine.duration) * w;
+    const startPct = (audioEngine.trimStart / audioEngine.duration) * 100;
+    const endPct = (audioEngine.trimEnd / audioEngine.duration) * 100;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(playheadX - 1.5, 0, 3, h);
+    trimMaskStart.style.width = `${startPct}%`;
+    trimMaskEnd.style.width = `${100 - endPct}%`;
+    trimHandleStart.style.left = `${startPct}%`;
+    trimHandleEnd.style.left = `${endPct}%`;
+  }
+
+  function updateTimelinePlayhead(currentTime) {
+    if (!timelinePlayhead || audioEngine.duration <= 0) return;
+    const playheadPct = Math.min(100, Math.max(0, (currentTime / audioEngine.duration) * 100));
+    timelinePlayhead.style.left = `${playheadPct}%`;
   }
 
   function updateTrimUI() {
@@ -190,18 +233,78 @@ document.addEventListener('DOMContentLoaded', () => {
     trimStartInput.value = start.toFixed(1);
     trimEndInput.value = end.toFixed(1);
     trimDurationDisplay.textContent = `${dur.toFixed(1)}s`;
-    drawTimelineWaveform();
+    updateHandlesFromEngine();
   }
 
-  // 7. Load Audio Handlers
+  // Dual-Handle Dragging State Machine
+  let activeHandle = null; // 'start' | 'end'
+
+  function onHandlePointerDown(handleType, e) {
+    if (audioEngine.duration <= 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activeHandle = handleType;
+
+    if (handleType === 'start') trimHandleStart.classList.add('dragging');
+    if (handleType === 'end') trimHandleEnd.classList.add('dragging');
+
+    window.addEventListener('pointermove', onHandlePointerMove);
+    window.addEventListener('pointerup', onHandlePointerUp);
+  }
+
+  function onHandlePointerMove(e) {
+    if (!activeHandle || audioEngine.duration <= 0) return;
+    const rect = timelineWrapper.getBoundingClientRect();
+    const clientX = e.clientX;
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetTime = ratio * audioEngine.duration;
+
+    if (activeHandle === 'start') {
+      const safeEnd = Math.max(1, audioEngine.trimEnd - 0.5);
+      const newStart = Math.min(targetTime, safeEnd);
+      audioEngine.setTrim(newStart, audioEngine.trimEnd);
+    } else if (activeHandle === 'end') {
+      const safeStart = Math.min(audioEngine.duration - 0.5, audioEngine.trimStart + 0.5);
+      const newEnd = Math.max(targetTime, safeStart);
+      audioEngine.setTrim(audioEngine.trimStart, newEnd);
+    }
+
+    updateTrimUI();
+  }
+
+  function onHandlePointerUp() {
+    if (!activeHandle) return;
+    trimHandleStart.classList.remove('dragging');
+    trimHandleEnd.classList.remove('dragging');
+    activeHandle = null;
+    window.removeEventListener('pointermove', onHandlePointerMove);
+    window.removeEventListener('pointerup', onHandlePointerUp);
+  }
+
+  trimHandleStart.addEventListener('pointerdown', (e) => onHandlePointerDown('start', e));
+  trimHandleEnd.addEventListener('pointerdown', (e) => onHandlePointerDown('end', e));
+
+  // Click on timeline seeks playback
+  timelineWrapper.addEventListener('click', (e) => {
+    if (e.target.closest('.trim-handle')) return;
+    if (audioEngine.duration <= 0) return;
+    const rect = timelineWrapper.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetTime = ratio * audioEngine.duration;
+    audioEngine.seek(targetTime);
+    updateTimelinePlayhead(targetTime);
+  });
+
+  // 8. Load Audio Handlers
   async function handleAudioLoad(meta) {
     audioNameEl.textContent = meta.fileName;
     audioDurationEl.textContent = renderer.formatTime(meta.duration);
     audioInfoBar.style.display = 'flex';
     fileDropZone.classList.add('has-file');
 
-    inputTitle.value = meta.fileName;
-    renderer.title = meta.fileName;
+    inputTitle.value = meta.fileName.replace(/\.[^/.]+$/, '');
+    renderer.title = inputTitle.value;
 
     updateTrimUI();
     drawTimelineWaveform();
@@ -213,9 +316,10 @@ document.addEventListener('DOMContentLoaded', () => {
       fileDropZone.classList.add('loading');
       const meta = await audioEngine.loadAudioFile(file);
       await handleAudioLoad(meta);
+      showToast(`${I18N.t('audioLoaded')}: ${meta.fileName}`, 'success');
     } catch (err) {
       console.error(err);
-      alert(I18N.t('formatNotSupported'));
+      showToast(I18N.t('formatNotSupported'), 'error');
     } finally {
       fileDropZone.classList.remove('loading');
     }
@@ -229,8 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const meta = await audioEngine.generateDemoBuffer();
       await handleAudioLoad(meta);
       audioEngine.play();
+      showToast(I18N.t('demoReady'), 'success');
     } catch (e) {
       console.error(e);
+      showToast('Error synthesizing demo track', 'error');
     } finally {
       btnTryDemo.disabled = false;
       btnTryDemo.textContent = I18N.t('tryDemo');
@@ -272,7 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Play / Pause Controls
   btnPlayPause.addEventListener('click', () => {
     if (!audioEngine.audioBuffer) {
-      // Auto-load demo on play if empty!
       btnTryDemo.click();
       return;
     }
@@ -288,19 +393,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  btnPlaySelection.addEventListener('click', () => {
-    if (!audioEngine.audioBuffer) return;
+  btnPlaySelection.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!audioEngine.audioBuffer) {
+      showToast(I18N.t('toastNoAudio'), 'error');
+      return;
+    }
     audioEngine.play(audioEngine.trimStart);
-  });
-
-  // Timeline Interactions
-  timelineCanvas.addEventListener('click', (e) => {
-    if (audioEngine.duration <= 0) return;
-    const rect = timelineCanvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetTime = ratio * audioEngine.duration;
-    audioEngine.seek(targetTime);
   });
 
   // Trim Inputs
@@ -340,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Color Theme Selection
+  // Color Theme Selection (Supports 5 themes including mono-gold)
   document.querySelectorAll('[data-theme]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const themeId = btn.getAttribute('data-theme');
@@ -352,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Background Mode Selection
+  // Background Mode Selection (dark-glass, neon-vortex, custom-image)
   document.querySelectorAll('[data-bg]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const bgId = btn.getAttribute('data-bg');
@@ -368,41 +467,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Custom Background Upload
+  // Custom Background Upload with ObjectURL Memory Management
   bgFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          renderer.setCustomBgImage(img);
-          renderer.setBgMode('custom-image');
-          document.querySelector('[data-bg="custom-image"]')?.click();
-        };
-        img.src = ev.target.result;
+      if (currentBgObjectUrl) {
+        URL.revokeObjectURL(currentBgObjectUrl);
+      }
+      currentBgObjectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        renderer.setCustomBgImage(img);
+        renderer.setBgMode('custom-image');
+        document.querySelector('[data-bg="custom-image"]')?.click();
       };
-      reader.readAsDataURL(file);
+      img.src = currentBgObjectUrl;
     }
   });
 
-  // Custom Vinyl Cover Upload
+  // Custom Vinyl Cover Upload with ObjectURL Memory Management
   coverFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          renderer.setCoverImage(img);
-        };
-        img.src = ev.target.result;
+      if (currentCoverObjectUrl) {
+        URL.revokeObjectURL(currentCoverObjectUrl);
+      }
+      currentCoverObjectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        renderer.setCoverImage(img);
       };
-      reader.readAsDataURL(file);
+      img.src = currentCoverObjectUrl;
     }
   });
 
   document.getElementById('btn-remove-cover')?.addEventListener('click', () => {
+    if (currentCoverObjectUrl) {
+      URL.revokeObjectURL(currentCoverObjectUrl);
+      currentCoverObjectUrl = null;
+    }
     renderer.setCoverImage(null);
     coverFileInput.value = '';
   });
@@ -450,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Export Flow
   btnExport.addEventListener('click', async () => {
     if (!audioEngine.audioBuffer) {
-      alert(I18N.t('readyToPlay'));
+      showToast(I18N.t('toastNoAudio'), 'error');
       return;
     }
 
@@ -472,10 +575,11 @@ document.addEventListener('DOMContentLoaded', () => {
       exportedVideoResult = await exporter.startExport();
       exportSuccessBox.style.display = 'block';
       btnCancelExport.style.display = 'none';
+      showToast(I18N.t('toastExportReady'), 'success');
     } catch (err) {
       if (err.message !== 'Cancelled') {
         console.error(err);
-        alert(I18N.t('recordingFailed'));
+        showToast(I18N.t('recordingFailed'), 'error');
         exportModal.classList.remove('open');
       }
     }
@@ -484,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCancelExport.addEventListener('click', () => {
     exporter.cancel();
     exportModal.classList.remove('open');
+    showToast(I18N.t('exportCancelled'), 'info');
   });
 
   btnDownloadVideo.addEventListener('click', () => {

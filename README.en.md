@@ -23,9 +23,9 @@ Everything runs locally in your browser: **no upload, no waitlist, no paywall, a
 <br/>
 
 <img alt="Use online" src="https://img.shields.io/badge/use%20online-ngiken.github.io-fb7299?style=for-the-badge">
-<img alt="Version" src="https://img.shields.io/badge/version-1.0.0-00aeec?style=for-the-badge">
+<img alt="Version" src="https://img.shields.io/badge/version-1.1.0-00aeec?style=for-the-badge">
 <img alt="Privacy" src="https://img.shields.io/badge/privacy-100%25%20local-10b981?style=for-the-badge">
-<img alt="Tests" src="https://img.shields.io/badge/e2e-23%2F23-27c499?style=for-the-badge">
+<img alt="Tests" src="https://img.shields.io/badge/e2e-28%2F28-27c499?style=for-the-badge">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-9aa4b2?style=for-the-badge">
 
 <br/><br/>

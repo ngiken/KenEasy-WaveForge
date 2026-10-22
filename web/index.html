@@ -119,15 +119,21 @@
           <button class="pill-btn" data-theme="cyber-purple">
             <span class="pill-label" style="color:#b827fc">赛博霓虹</span>
           </button>
+          <button class="pill-btn" data-theme="mono-gold" style="grid-column: span 2;">
+            <span class="pill-label" style="color:#ffd700">黑金至尊</span>
+          </button>
         </div>
       </section>
 
       <!-- 5. Background & Artwork -->
       <section class="panel-card">
         <h2 data-i18n="sectionBackground">背景与视觉氛围</h2>
-        <div class="pill-grid grid-2" style="margin-bottom: 12px;">
+        <div class="pill-grid" style="margin-bottom: 12px;">
           <button class="pill-btn active" data-bg="dark-glass">
             <span class="pill-label" data-i18n="bg_dark_glass">深空微光</span>
+          </button>
+          <button class="pill-btn" data-bg="neon-vortex">
+            <span class="pill-label" data-i18n="bg_neon_vortex">霓虹漩涡</span>
           </button>
           <button class="pill-btn" data-bg="custom-image">
             <span class="pill-label" data-i18n="bg_custom_image">自定义壁纸</span>
@@ -137,7 +143,7 @@
         <div id="custom-bg-controls" style="display:none; margin-bottom: 12px;">
           <input type="file" id="bg-file-input" accept="image/*" style="display:none">
           <button class="btn-secondary" style="width:100%; margin-bottom:8px;" onclick="document.getElementById('bg-file-input').click()">
-            🖼️ 上传背景图片
+            <span data-i18n="uploadBg">🖼️ 上传背景图片</span>
           </button>
         </div>
 
@@ -214,9 +220,18 @@
       <!-- 7. Trimming & Timeline -->
       <section class="panel-card">
         <h2 data-i18n="sectionTrim">片段裁剪与时间轴</h2>
-        <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">点击时间轴可快速定位播放，调节起止时间可仅导出精彩片段。</p>
-        <div class="timeline-wrapper">
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px;" data-i18n="timelineHint">拖动两端高亮手柄自由截取片段，点击波形快速跳转播放。</p>
+        <div id="timeline-wrapper" class="timeline-wrapper">
           <canvas id="timeline-canvas"></canvas>
+          <div id="trim-mask-start" class="trim-mask trim-mask-left"></div>
+          <div id="trim-mask-end" class="trim-mask trim-mask-right"></div>
+          <div id="trim-handle-start" class="trim-handle trim-handle-left" title="拖动调整起始时间">
+            <span class="handle-bar"></span>
+          </div>
+          <div id="trim-handle-end" class="trim-handle trim-handle-right" title="拖动调整结束时间">
+            <span class="handle-bar"></span>
+          </div>
+          <div id="timeline-playhead" class="timeline-playhead"></div>
         </div>
         <div class="trim-inputs-row">
           <div class="trim-input-item">
@@ -260,11 +275,17 @@
     </section>
   </main>
 
-  <!-- Exporting Progress Modal -->
+  <!-- Exporting Progress Modal with Real-time PiP Preview -->
   <div id="export-modal" class="modal-overlay">
     <div class="modal-card">
       <h3 data-i18n="exportModalTitle">正在生成高清视频</h3>
       <p data-i18n="exportModalDesc">使用原生 MediaRecorder 硬件加速，纯本地渲染合成...</p>
+
+      <!-- PiP Live Stream Preview -->
+      <div class="pip-container">
+        <canvas id="pip-canvas" width="320" height="180"></canvas>
+        <div class="pip-tag"><span class="pip-dot"></span><span data-i18n="pipLivePreview">实时录制画面 (画中画)</span></div>
+      </div>
 
       <div class="export-progress-bar">
         <div id="export-progress-fill" class="export-progress-fill"></div>
@@ -287,6 +308,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Global Glass Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Pinned Core Runtime Scripts -->
   <script src="config.js?v=1.0.0"></script>

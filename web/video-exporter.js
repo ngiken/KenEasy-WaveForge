@@ -1,14 +1,18 @@
 /**
- * KenEasy WaveForge - Video Exporter
+ * KenEasy WaveForge - Video Exporter (v1.1.0 High-Fidelity Pipeline)
  * Pure client-side hardware-accelerated MediaRecorder pipeline.
- * Synchronizes Canvas 60fps video stream with Web Audio destination stream.
+ * Synchronizes Canvas 60fps video stream with Web Audio destination stream,
+ * provides live real-time picture-in-picture (PiP) preview during render,
+ * and eliminates initial audio-video desync.
  */
 
 class VideoExporter {
-  constructor({ canvas, audioEngine, renderer }) {
+  constructor({ canvas, audioEngine, renderer, pipCanvas }) {
     this.canvas = canvas;
     this.audioEngine = audioEngine;
     this.renderer = renderer;
+    this.pipCanvas = pipCanvas;
+    this.pipCtx = pipCanvas ? pipCanvas.getContext('2d') : null;
 
     this.mediaRecorder = null;
     this.recordedChunks = [];
@@ -126,15 +130,33 @@ class VideoExporter {
         reject(err);
       };
 
-      // Start recording
-      this.mediaRecorder.start(250); // collect chunks every 250ms
+      // Start recording with 200ms slice
+      this.mediaRecorder.start(200);
 
-      // Start audio playback from trimStart
-      this.audioEngine.play(trimStart);
+      // Micro-sleep to allow MediaRecorder encoder thread to stabilize before firing audio
+      setTimeout(() => {
+        if (!this.isRecording || this.exportCancelled) return;
+        this.audioEngine.play(trimStart);
+      }, 35);
 
-      // Animation & Progress Tracking Loop
+      // Animation & Progress Tracking Loop + PiP Rendering
       const trackProgress = () => {
         if (!this.isRecording || this.exportCancelled) return;
+
+        // Render to PiP Mini-Canvas
+        if (this.pipCtx && this.pipCanvas) {
+          this.pipCtx.drawImage(
+            this.canvas,
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height,
+            0,
+            0,
+            this.pipCanvas.width,
+            this.pipCanvas.height
+          );
+        }
 
         const currentAudioTime = this.audioEngine.getCurrentTime();
         const elapsedInClip = Math.max(0, currentAudioTime - trimStart);
@@ -157,7 +179,7 @@ class VideoExporter {
           });
         }
 
-        if (currentAudioTime >= trimEnd - 0.05 || !this.audioEngine.isPlaying) {
+        if (currentAudioTime >= trimEnd - 0.04 || (!this.audioEngine.isPlaying && elapsedInClip >= exportDuration * 0.95)) {
           // Reached end of clip
           if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
             this.mediaRecorder.stop();
@@ -194,7 +216,7 @@ class VideoExporter {
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    }, 1000);
+    }, 1500);
   }
 }
 
