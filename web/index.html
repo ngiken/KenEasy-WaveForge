@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KenEasy WaveForge - 极速纯前端音频波形视频生成器</title>
+  <meta name="description" content="100% 浏览器本地离线运行的音频可视化与动态波形短视频生成器。支持 9:16 竖屏/16:9 横屏/1:1 唱片，多款酷炫动效与本地高清视频导出。">
+  <link rel="stylesheet" href="styles.css?v=1.0.0">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-group">
+      <div class="brand-logo">KW</div>
+      <div class="brand-text">
+        <h1 data-i18n="appName">KenEasy 声波工坊</h1>
+        <p data-i18n="appSubtitle">极速纯前端音频可视化与动态波形短视频生成器</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="lang-switch">
+        <button id="btn-lang-zh" class="lang-btn active">中文</button>
+        <button id="btn-lang-en" class="lang-btn">English</button>
+      </div>
+      <a href="https://github.com/ngiken/KenEasy-WaveForge" target="_blank" rel="noopener noreferrer" class="btn-github">
+        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span data-i18n="githubLink">GitHub</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Grid Workspace -->
+  <main class="app-container">
+    <!-- Left Column: Controls Sidebar -->
+    <aside class="controls-sidebar">
+      <!-- 1. Audio Import & Quick Demo -->
+      <section class="panel-card">
+        <h2 data-i18n="dragDropHint">音频文件载入</h2>
+        <div id="file-drop-zone" class="drop-zone" onclick="document.getElementById('audio-file-input').click()">
+          <input type="file" id="audio-file-input" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" style="display:none">
+          <div class="drop-icon">🎵</div>
+          <div class="drop-hint" data-i18n="uploadAudio">选择或拖拽音频文件</div>
+          <div class="drop-subtext">支持 MP3, WAV, FLAC, M4A, OGG 等所有现代音频</div>
+          <div class="drop-actions" onclick="event.stopPropagation()">
+            <button id="btn-try-demo" class="btn-secondary btn-demo" data-i18n="tryDemo">✨ 试听示例曲目</button>
+          </div>
+        </div>
+
+        <div id="audio-info-bar" class="audio-info-bar">
+          <div class="audio-meta">
+            <span>🎶</span>
+            <strong id="audio-name">demo-track.mp3</strong>
+            <span id="audio-duration">(00:12)</span>
+          </div>
+          <button id="btn-clear-audio" class="btn-clear" title="Clear">✕</button>
+        </div>
+      </section>
+
+      <!-- 2. Aspect Ratio -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionRatio">画幅比例与平台</h2>
+        <div class="pill-grid">
+          <button class="pill-btn active" data-ratio="9:16">
+            <span class="pill-icon">📱</span>
+            <span class="pill-label" data-i18n="ratio_portrait">9:16 竖屏</span>
+            <span class="pill-sub">Shorts/TikTok</span>
+          </button>
+          <button class="pill-btn" data-ratio="16:9">
+            <span class="pill-icon">🖥️</span>
+            <span class="pill-label" data-i18n="ratio_landscape">16:9 横屏</span>
+            <span class="pill-sub">Bilibili/YT</span>
+          </button>
+          <button class="pill-btn" data-ratio="1:1">
+            <span class="pill-icon">🔲</span>
+            <span class="pill-label" data-i18n="ratio_square">1:1 方形</span>
+            <span class="pill-sub">Vinyl/Feed</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 3. Wave Style -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionStyle">波形动态样式</h2>
+        <div class="pill-grid grid-4">
+          <button class="pill-btn active" data-style="bars">
+            <span class="pill-icon">📊</span>
+            <span class="pill-label" data-i18n="style_bars">光谱柱状</span>
+          </button>
+          <button class="pill-btn" data-style="wave">
+            <span class="pill-icon">🌊</span>
+            <span class="pill-label" data-i18n="style_wave">对称波浪</span>
+          </button>
+          <button class="pill-btn" data-style="radial">
+            <span class="pill-icon">💿</span>
+            <span class="pill-label" data-i18n="style_radial">黑胶圆环</span>
+          </button>
+          <button class="pill-btn" data-style="ribbon">
+            <span class="pill-icon">✨</span>
+            <span class="pill-label" data-i18n="style_ribbon">霓虹丝带</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 4. Color Palette -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionTheme">霓虹配色方案</h2>
+        <div class="pill-grid grid-2">
+          <button class="pill-btn active" data-theme="pink-cyan">
+            <span class="pill-label" style="color:#fb7299">KenEasy 粉蓝</span>
+          </button>
+          <button class="pill-btn" data-theme="emerald-aurora">
+            <span class="pill-label" style="color:#10b981">极光翠绿</span>
+          </button>
+          <button class="pill-btn" data-theme="sunset-fire">
+            <span class="pill-label" style="color:#ff5858">落日熔金</span>
+          </button>
+          <button class="pill-btn" data-theme="cyber-purple">
+            <span class="pill-label" style="color:#b827fc">赛博霓虹</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 5. Background & Artwork -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionBackground">背景与视觉氛围</h2>
+        <div class="pill-grid grid-2" style="margin-bottom: 12px;">
+          <button class="pill-btn active" data-bg="dark-glass">
+            <span class="pill-label" data-i18n="bg_dark_glass">深空微光</span>
+          </button>
+          <button class="pill-btn" data-bg="custom-image">
+            <span class="pill-label" data-i18n="bg_custom_image">自定义壁纸</span>
+          </button>
+        </div>
+
+        <div id="custom-bg-controls" style="display:none; margin-bottom: 12px;">
+          <input type="file" id="bg-file-input" accept="image/*" style="display:none">
+          <button class="btn-secondary" style="width:100%; margin-bottom:8px;" onclick="document.getElementById('bg-file-input').click()">
+            🖼️ 上传背景图片
+          </button>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span data-i18n="bgBlur">背景模糊度</span>
+            <span id="val-bg-blur" class="val-tag">10px</span>
+          </div>
+          <input type="range" id="slider-bg-blur" class="range-slider" min="0" max="40" value="10">
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span data-i18n="bgVignette">暗角阴影深度</span>
+            <span id="val-bg-vignette" class="val-tag">60%</span>
+          </div>
+          <input type="range" id="slider-bg-vignette" class="range-slider" min="0" max="100" value="60">
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span data-i18n="audioGain">频谱律动灵敏度</span>
+            <span id="val-sensitivity" class="val-tag">1.0x</span>
+          </div>
+          <input type="range" id="slider-sensitivity" class="range-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+      </section>
+
+      <!-- 6. Typography & Album Art -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionText">文本与封面标语</h2>
+        <div class="field-group">
+          <label class="field-label" data-i18n="titleLabel">视频主标题</label>
+          <input type="text" id="input-title" class="text-input" value="KenEasy Soundscape" data-i18n-placeholder="titlePlaceholder">
+        </div>
+        <div class="field-group">
+          <label class="field-label" data-i18n="authorLabel">副标题 / 艺术家</label>
+          <input type="text" id="input-author" class="text-input" value="Audio Visualizer" data-i18n-placeholder="authorPlaceholder">
+        </div>
+
+        <div style="display:flex; gap:8px; margin: 12px 0;">
+          <input type="file" id="cover-file-input" accept="image/*" style="display:none">
+          <button class="btn-secondary" style="flex:1" onclick="document.getElementById('cover-file-input').click()" data-i18n="uploadCover">
+            💿 上传黑胶中心封面
+          </button>
+          <button id="btn-remove-cover" class="btn-secondary" data-i18n="removeCover">✕</button>
+        </div>
+
+        <div class="toggle-group">
+          <label for="toggle-cover" data-i18n="showCover">中心显示黑胶封面</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="toggle-cover" checked>
+            <span class="slider-round"></span>
+          </div>
+        </div>
+
+        <div class="toggle-group">
+          <label for="toggle-timecode" data-i18n="showTimecode">显示实时时间码与进度</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="toggle-timecode" checked>
+            <span class="slider-round"></span>
+          </div>
+        </div>
+
+        <div class="toggle-group">
+          <label for="toggle-watermark" data-i18n="showBrandWatermark">显示系列专属水印</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="toggle-watermark" checked>
+            <span class="slider-round"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Trimming & Timeline -->
+      <section class="panel-card">
+        <h2 data-i18n="sectionTrim">片段裁剪与时间轴</h2>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">点击时间轴可快速定位播放，调节起止时间可仅导出精彩片段。</p>
+        <div class="timeline-wrapper">
+          <canvas id="timeline-canvas"></canvas>
+        </div>
+        <div class="trim-inputs-row">
+          <div class="trim-input-item">
+            <span data-i18n="trimStart">起:</span>
+            <input type="number" id="trim-start" step="0.5" min="0" value="0.0">s
+          </div>
+          <div class="trim-input-item">
+            <span data-i18n="trimEnd">止:</span>
+            <input type="number" id="trim-end" step="0.5" min="0" value="12.0">s
+          </div>
+          <button id="btn-reset-trim" class="btn-secondary" data-i18n="resetTrim">重置</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--muted);">
+          <span><span data-i18n="trimDuration">截取时长</span>: <strong id="trim-duration-display" style="color:var(--blue)">12.0s</strong></span>
+          <a href="#" id="btn-play-selection" style="color:var(--pink); text-decoration:none;" data-i18n="playSelection">▶ 试听截取片段</a>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Right Column: Stage Preview -->
+    <section class="stage-column">
+      <div class="preview-container">
+        <div id="preview-wrapper" class="canvas-wrapper">
+          <canvas id="visualizer-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Stage Bottom Control Bar -->
+      <div class="stage-control-bar">
+        <div class="control-bar-left">
+          <button id="btn-play-pause" class="btn-play-hero">
+            <span id="play-icon">▶</span>
+            <span class="btn-label" data-i18n="play">播放预览</span>
+          </button>
+        </div>
+        <button id="btn-export" class="btn-export-hero">
+          <span>🎬</span>
+          <span data-i18n="exportVideo">导出波形视频</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Exporting Progress Modal -->
+  <div id="export-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 data-i18n="exportModalTitle">正在生成高清视频</h3>
+      <p data-i18n="exportModalDesc">使用原生 MediaRecorder 硬件加速，纯本地渲染合成...</p>
+
+      <div class="export-progress-bar">
+        <div id="export-progress-fill" class="export-progress-fill"></div>
+      </div>
+
+      <div class="export-meta-stats">
+        <div><span data-i18n="exportProgress">进度</span>: <strong id="export-progress-text" style="color:var(--blue)">0%</strong></div>
+        <div><span data-i18n="exportEstimate">预估剩余</span>: <strong id="export-eta-text" style="color:var(--pink)">--</strong></div>
+      </div>
+
+      <div id="export-success-box" class="export-success-box">
+        <h4 data-i18n="exportSuccessTitle">🎉 视频导出成功！</h4>
+        <p data-i18n="exportSuccessDesc">音画合一视频已准备好，点击下方按钮保存到本地。</p>
+        <button id="btn-download-video" class="btn-download-big" data-i18n="downloadBtn">立即下载视频</button>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:12px; margin-top:12px;">
+        <button id="btn-cancel-export" class="btn-secondary" data-i18n="cancelExport">取消导出</button>
+        <button id="btn-close-modal" class="btn-secondary" data-i18n="closeModal">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pinned Core Runtime Scripts -->
+  <script src="config.js?v=1.0.0"></script>
+  <script src="i18n.js?v=1.0.0"></script>
+  <script src="audio-engine.js?v=1.0.0"></script>
+  <script src="visualizer-renderer.js?v=1.0.0"></script>
+  <script src="video-exporter.js?v=1.0.0"></script>
+  <script src="app.js?v=1.0.0"></script>
+</body>
+</html>

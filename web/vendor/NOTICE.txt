@@ -1,0 +1,11 @@
+KenEasy WaveForge - Third-Party Notices & Architecture
+
+This product is engineered to be 100% client-side, lightweight, and offline-first.
+It uses purely native Web standards:
+- Web Audio API (AudioContext, AnalyserNode, OfflineAudioContext)
+- HTML5 Canvas 2D Rendering Engine
+- MediaStream & MediaRecorder API (Hardware-accelerated client-side video encoding)
+- Standard DOM & CSS Glassmorphism Engine
+
+No remote telemetry, external CDNs, tracking cookies, or server-side video transcoding dependencies.
+Zero runtime network activity required.
