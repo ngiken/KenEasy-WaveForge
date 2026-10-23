@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KenEasy WaveForge - 极速纯前端音频波形视频生成器</title>
   <meta name="description" content="100% 浏览器本地离线运行的音频可视化与动态波形短视频生成器。支持 9:16 竖屏/16:9 横屏/1:1 唱片，多款酷炫动效与本地高清视频导出。">
@@ -37,13 +38,13 @@
     <aside class="controls-sidebar">
       <!-- 1. Audio Import & Quick Demo -->
       <section class="panel-card">
-        <h2 data-i18n="dragDropHint">音频文件载入</h2>
-        <div id="file-drop-zone" class="drop-zone" onclick="document.getElementById('audio-file-input').click()">
+        <h2 data-i18n="sectionAudio">音频导入与试听</h2>
+        <div id="file-drop-zone" class="drop-zone">
           <input type="file" id="audio-file-input" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" style="display:none">
           <div class="drop-icon">🎵</div>
           <div class="drop-hint" data-i18n="uploadAudio">选择或拖拽音频文件</div>
-          <div class="drop-subtext">支持 MP3, WAV, FLAC, M4A, OGG 等所有现代音频</div>
-          <div class="drop-actions" onclick="event.stopPropagation()">
+          <div class="drop-subtext" data-i18n="dragDropHint">支持 MP3, WAV, FLAC, M4A, OGG 等所有现代音频</div>
+          <div class="drop-actions">
             <button id="btn-try-demo" class="btn-secondary btn-demo" data-i18n="tryDemo">✨ 试听示例曲目</button>
           </div>
         </div>
@@ -108,19 +109,19 @@
         <h2 data-i18n="sectionTheme">霓虹配色方案</h2>
         <div class="pill-grid grid-2">
           <button class="pill-btn active" data-theme="pink-cyan">
-            <span class="pill-label" style="color:#fb7299">KenEasy 粉蓝</span>
+            <span class="pill-label" data-i18n="theme_pink_cyan">KenEasy 粉蓝 (官方经典)</span>
           </button>
           <button class="pill-btn" data-theme="emerald-aurora">
-            <span class="pill-label" style="color:#10b981">极光翠绿</span>
+            <span class="pill-label" data-i18n="theme_emerald_aurora">极光翠绿 (清新高雅)</span>
           </button>
           <button class="pill-btn" data-theme="sunset-fire">
-            <span class="pill-label" style="color:#ff5858">落日熔金</span>
+            <span class="pill-label" data-i18n="theme_sunset_fire">落日熔金 (热情活力)</span>
           </button>
           <button class="pill-btn" data-theme="cyber-purple">
-            <span class="pill-label" style="color:#b827fc">赛博霓虹</span>
+            <span class="pill-label" data-i18n="theme_cyber_purple">赛博霓虹 (电音未来)</span>
           </button>
           <button class="pill-btn" data-theme="mono-gold" style="grid-column: span 2;">
-            <span class="pill-label" style="color:#ffd700">黑金至尊</span>
+            <span class="pill-label" data-i18n="theme_mono_gold">黑金至尊 (奢华质感)</span>
           </button>
         </div>
       </section>
@@ -142,7 +143,7 @@
 
         <div id="custom-bg-controls" style="display:none; margin-bottom: 12px;">
           <input type="file" id="bg-file-input" accept="image/*" style="display:none">
-          <button class="btn-secondary" style="width:100%; margin-bottom:8px;" onclick="document.getElementById('bg-file-input').click()">
+          <button id="btn-upload-bg" class="btn-secondary" style="width:100%; margin-bottom:8px;">
             <span data-i18n="uploadBg">🖼️ 上传背景图片</span>
           </button>
         </div>
@@ -177,19 +178,19 @@
         <h2 data-i18n="sectionText">文本与封面标语</h2>
         <div class="field-group">
           <label class="field-label" data-i18n="titleLabel">视频主标题</label>
-          <input type="text" id="input-title" class="text-input" value="KenEasy Soundscape" data-i18n-placeholder="titlePlaceholder">
+          <input type="text" id="input-title" class="text-input" value="KenEasy Soundscape" data-i18n-placeholder="titlePlaceholder" maxlength="100">
         </div>
         <div class="field-group">
           <label class="field-label" data-i18n="authorLabel">副标题 / 艺术家</label>
-          <input type="text" id="input-author" class="text-input" value="Audio Visualizer" data-i18n-placeholder="authorPlaceholder">
+          <input type="text" id="input-author" class="text-input" value="Audio Visualizer" data-i18n-placeholder="authorPlaceholder" maxlength="100">
         </div>
 
         <div style="display:flex; gap:8px; margin: 12px 0;">
           <input type="file" id="cover-file-input" accept="image/*" style="display:none">
-          <button class="btn-secondary" style="flex:1" onclick="document.getElementById('cover-file-input').click()" data-i18n="uploadCover">
+          <button id="btn-upload-cover" class="btn-secondary" style="flex:1" data-i18n="uploadCover">
             💿 上传黑胶中心封面
           </button>
-          <button id="btn-remove-cover" class="btn-secondary" data-i18n="removeCover">✕</button>
+          <button id="btn-remove-cover" class="btn-secondary" data-i18n-title="removeCover">✕</button>
         </div>
 
         <div class="toggle-group">

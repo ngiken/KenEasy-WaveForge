@@ -30,6 +30,17 @@ class AudioEngine {
     this.timeData = null;
   }
 
+  reset() {
+    this.stop();
+    this.audioBuffer = null;
+    this.peaks = [];
+    this.fileName = '';
+    this.duration = 0;
+    this.trimStart = 0;
+    this.trimEnd = 0;
+    this.pausedAt = 0;
+  }
+
   ensureContext() {
     if (!this.audioCtx) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -46,6 +57,7 @@ class AudioEngine {
       this.streamDestination = this.audioCtx.createMediaStreamDestination();
 
       // Audio Graph: Source -> Analyser -> Gain -> Hardware Destination & Stream Destination
+      this.analyser.connect(this.gainNode);
       this.gainNode.connect(this.audioCtx.destination);
       this.gainNode.connect(this.streamDestination);
 
@@ -287,7 +299,7 @@ class AudioEngine {
     if (!this.audioBuffer) return;
     this.ensureContext();
 
-    if (this.isPlaying) {
+    if (this.isPlaying || this.sourceNode) {
       this.pause();
     }
 
@@ -300,13 +312,21 @@ class AudioEngine {
 
     this.sourceNode = this.audioCtx.createBufferSource();
     this.sourceNode.buffer = this.audioBuffer;
+    // Source connects only to analyser; analyser -> gainNode routing is established in ensureContext()
     this.sourceNode.connect(this.analyser);
-    this.analyser.connect(this.gainNode);
 
-    this.sourceNode.onended = () => {
+    const currentSource = this.sourceNode;
+    currentSource.onended = () => {
+      if (this.sourceNode !== currentSource) return;
+      if (this.sourceNode) {
+        try {
+          this.sourceNode.disconnect();
+        } catch (e) {}
+        this.sourceNode = null;
+      }
       if (this.isPlaying) {
         this.isPlaying = false;
-        this.pausedAt = this.trimStart;
+        this.pausedAt = this.trimEnd;
         if (this.onEnded) this.onEnded();
         if (this.onStateChange) this.onStateChange(false);
       }
@@ -320,8 +340,9 @@ class AudioEngine {
   }
 
   pause() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying && !this.sourceNode) return;
     if (this.sourceNode) {
+      this.sourceNode.onended = null;
       try {
         this.sourceNode.stop();
         this.sourceNode.disconnect();
@@ -355,8 +376,9 @@ class AudioEngine {
   }
 
   setTrim(start, end) {
-    this.trimStart = Math.max(0, Math.min(start, this.duration));
-    this.trimEnd = Math.max(this.trimStart + 0.5, Math.min(end, this.duration));
+    const minSpan = Math.min(0.5, this.duration);
+    this.trimEnd = Math.min(this.duration, Math.max(end, minSpan));
+    this.trimStart = Math.max(0, Math.min(start, this.trimEnd - minSpan));
     if (this.pausedAt < this.trimStart || this.pausedAt > this.trimEnd) {
       this.pausedAt = this.trimStart;
     }

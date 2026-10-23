@@ -111,8 +111,8 @@ class VisualizerRenderer {
       coverCenter = { x: w * 0.28, y: h * 0.5 };
       coverRadius = h * 0.25;
     } else if (this.aspectRatioId === '1:1') {
-      coverCenter = { x: w * 0.5, y: h * 0.42 };
-      coverRadius = w * 0.21;
+      coverCenter = { x: w * 0.5, y: h * 0.45 };
+      coverRadius = w * 0.19;
     }
 
     if (this.showCover) {
@@ -178,17 +178,20 @@ class VisualizerRenderer {
 
       // Swirling dual elliptical gradients
       const rad1 = Math.max(w, h) * 0.7;
-      const vortexGrad1 = ctx.createRadialGradient(w * 0.15, h * 0.15, 20, 0, 0, rad1);
-      vortexGrad1.addColorStop(0, `${theme.primary}33`);
-      vortexGrad1.addColorStop(0.5, `${theme.secondary}1a`);
-      vortexGrad1.addColorStop(1, 'transparent');
-      ctx.fillStyle = vortexGrad1;
+      const vKey = `${w}_${h}_${this.themeId}`;
+      if (this._vortexKey !== vKey) {
+        this._vortexKey = vKey;
+        this._vortexGrad1 = ctx.createRadialGradient(w * 0.15, h * 0.15, 20, 0, 0, rad1);
+        this._vortexGrad1.addColorStop(0, `${theme.primary}33`);
+        this._vortexGrad1.addColorStop(0.5, `${theme.secondary}1a`);
+        this._vortexGrad1.addColorStop(1, 'transparent');
+        this._vortexGrad2 = ctx.createRadialGradient(-w * 0.2, -h * 0.2, 30, 0, 0, rad1 * 0.85);
+        this._vortexGrad2.addColorStop(0, `${theme.accent || theme.secondary}26`);
+        this._vortexGrad2.addColorStop(1, 'transparent');
+      }
+      ctx.fillStyle = this._vortexGrad1;
       ctx.fillRect(-rad1, -rad1, rad1 * 2, rad1 * 2);
-
-      const vortexGrad2 = ctx.createRadialGradient(-w * 0.2, -h * 0.2, 30, 0, 0, rad1 * 0.85);
-      vortexGrad2.addColorStop(0, `${theme.accent || theme.secondary}26`);
-      vortexGrad2.addColorStop(1, 'transparent');
-      ctx.fillStyle = vortexGrad2;
+      ctx.fillStyle = this._vortexGrad2;
       ctx.fillRect(-rad1, -rad1, rad1 * 2, rad1 * 2);
 
       ctx.restore();
@@ -196,36 +199,42 @@ class VisualizerRenderer {
       // Ambient particle field
       this.drawFloatingParticles(ctx, w, h);
     } else {
-      // Default: Deep Frosted Glass with Atmospheric Radial Glows
-      const grad1 = ctx.createRadialGradient(w * 0.2, h * 0.25, 50, w * 0.2, h * 0.25, w * 0.85);
-      grad1.addColorStop(0, `${theme.primary}24`);
-      grad1.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad1;
+      // Default: Deep Frosted Glass with Atmospheric Radial Glows (cached)
+      const bgKey = `${w}_${h}_${this.themeId}`;
+      if (this._bgCacheKey !== bgKey) {
+        this._bgCacheKey = bgKey;
+        this._grad1 = ctx.createRadialGradient(w * 0.2, h * 0.25, 50, w * 0.2, h * 0.25, w * 0.85);
+        this._grad1.addColorStop(0, `${theme.primary}24`);
+        this._grad1.addColorStop(1, 'transparent');
+        this._grad2 = ctx.createRadialGradient(w * 0.8, h * 0.75, 50, w * 0.8, h * 0.75, w * 0.85);
+        this._grad2.addColorStop(0, `${theme.secondary}22`);
+        this._grad2.addColorStop(1, 'transparent');
+      }
+      ctx.fillStyle = this._grad1;
       ctx.fillRect(0, 0, w, h);
-
-      const grad2 = ctx.createRadialGradient(w * 0.8, h * 0.75, 50, w * 0.8, h * 0.75, w * 0.85);
-      grad2.addColorStop(0, `${theme.secondary}22`);
-      grad2.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad2;
+      ctx.fillStyle = this._grad2;
       ctx.fillRect(0, 0, w, h);
-
       this.drawFloatingParticles(ctx, w, h);
     }
 
     // Vignette Overlay
     if (this.bgVignette > 0) {
-      const maxDim = Math.max(w, h);
-      const vigGrad = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.25, w * 0.5, h * 0.5, maxDim * 0.75);
-      const alpha = (this.bgVignette / 100) * 0.85;
-      vigGrad.addColorStop(0, 'rgba(11, 12, 15, 0)');
-      vigGrad.addColorStop(1, `rgba(11, 12, 15, ${alpha})`);
-      ctx.fillStyle = vigGrad;
+      const vigKey = `${w}_${h}_${this.bgVignette}`;
+      if (this._vigCacheKey !== vigKey) {
+        this._vigCacheKey = vigKey;
+        const maxD = Math.max(w, h);
+        this._vigGrad = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.25, w * 0.5, h * 0.5, maxD * 0.75);
+        this._vigGrad.addColorStop(0, 'rgba(11, 12, 15, 0)');
+        this._vigGrad.addColorStop(1, `rgba(11, 12, 15, ${(this.bgVignette / 100) * 0.85})`);
+      }
+      ctx.fillStyle = this._vigGrad;
       ctx.fillRect(0, 0, w, h);
     }
   }
 
   drawFloatingParticles(ctx, w, h) {
     ctx.save();
+    ctx.fillStyle = '#ffffff';
     for (let p of this.bgParticles) {
       p.x += p.speedX;
       p.y += p.speedY;
@@ -234,7 +243,7 @@ class VisualizerRenderer {
       if (p.y < 0) p.y = 1;
       if (p.y > 1) p.y = 0;
 
-      ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+      ctx.globalAlpha = p.alpha;
       ctx.beginPath();
       ctx.arc(p.x * w, p.y * h, p.radius, 0, Math.PI * 2);
       ctx.fill();
@@ -363,8 +372,8 @@ class VisualizerRenderer {
     ctx.save();
     ctx.translate(pivotX, pivotY);
 
-    // Tonearm base swivel angle: lifted (0.0) -> on record (0.34)
-    const angle = 0.55 + this.tonearmAngle;
+    // Tonearm base swivel angle: lifted (0.0) -> on grooves (0.34)
+    const angle = 0.28 + this.tonearmAngle * 0.5;
     ctx.rotate(angle);
 
     // 1. Arm Base / Gimbal Pivot
@@ -442,18 +451,24 @@ class VisualizerRenderer {
    */
   drawStyleBars(ctx, w, h, freqData, theme) {
     const isLandscape = this.aspectRatioId === '16:9';
-    const barCount = isLandscape ? 84 : 56;
+    const baseCount = (typeof CONFIG !== 'undefined' && CONFIG.WAVE_STYLES?.bars?.barCount) || 64;
+    const barCount = isLandscape ? Math.round(baseCount * 1.3) : Math.round(baseCount * 0.88);
     const startX = isLandscape ? w * 0.52 : w * 0.08;
     const usableWidth = isLandscape ? w * 0.42 : w * 0.84;
     const barWidth = (usableWidth / barCount) * 0.72;
     const gap = (usableWidth / barCount) * 0.28;
-    const baselineY = isLandscape ? h * 0.78 : h * 0.74;
-    const maxHeight = isLandscape ? h * 0.28 : h * 0.22;
+    const isSquare = this.aspectRatioId === '1:1';
+    const baselineY = isLandscape ? h * 0.78 : (isSquare ? h * 0.82 : h * 0.74);
+    const maxHeight = isLandscape ? h * 0.28 : (isSquare ? h * 0.16 : h * 0.22);
 
     const barGrad = ctx.createLinearGradient(0, baselineY - maxHeight, 0, baselineY);
     barGrad.addColorStop(0, theme.secondary);
     barGrad.addColorStop(0.6, theme.primary);
     barGrad.addColorStop(1, `${theme.primary}44`);
+
+    const reflGrad = ctx.createLinearGradient(0, baselineY, 0, baselineY + maxHeight * 0.28);
+    reflGrad.addColorStop(0, `${theme.primary}55`);
+    reflGrad.addColorStop(1, 'transparent');
 
     for (let i = 0; i < barCount; i++) {
       const freqIndex = Math.floor(Math.pow(i / barCount, 1.35) * (freqData.length * 0.75));
@@ -484,9 +499,6 @@ class VisualizerRenderer {
 
       // Reflection Bar
       const reflHeight = targetHeight * 0.28;
-      const reflGrad = ctx.createLinearGradient(0, baselineY, 0, baselineY + reflHeight);
-      reflGrad.addColorStop(0, `${theme.primary}55`);
-      reflGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = reflGrad;
       this.drawRoundedRect(ctx, x, baselineY + 4, barWidth, reflHeight, barWidth * 0.3);
       ctx.fill();
@@ -559,6 +571,14 @@ class VisualizerRenderer {
     ctx.save();
     ctx.translate(center.x, center.y);
 
+    const radialGrad = ctx.createRadialGradient(0, 0, baseRadius, 0, 0, baseRadius + maxBarLen);
+    radialGrad.addColorStop(0, theme.primary);
+    radialGrad.addColorStop(1, theme.secondary);
+    ctx.strokeStyle = radialGrad;
+    ctx.lineWidth = Math.max(2, (radius * 0.04) * 0.8);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+
     for (let i = 0; i < bars; i++) {
       const angle = i * angleStep;
       const freqIdx = Math.floor(Math.abs(Math.sin(angle)) * (freqData.length * 0.45));
@@ -570,19 +590,10 @@ class VisualizerRenderer {
       const x2 = Math.cos(angle) * (baseRadius + barLen);
       const y2 = Math.sin(angle) * (baseRadius + barLen);
 
-      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-      grad.addColorStop(0, theme.primary);
-      grad.addColorStop(1, theme.secondary);
-
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = Math.max(2, (radius * 0.04) * 0.8);
-      ctx.lineCap = 'round';
-
-      ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.stroke();
     }
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -639,27 +650,32 @@ class VisualizerRenderer {
 
     ctx.textAlign = align;
 
-    // 1. Dynamic Font Fitting for Primary Title
-    let baseFontSize = Math.round(w * (this.aspectRatioId === '16:9' ? 0.038 : 0.048));
-    ctx.font = `bold ${baseFontSize}px system-ui, -apple-system, sans-serif`;
-    let measuredWidth = ctx.measureText(this.title || 'Untitled').width;
-
-    // Scale down font size until it fits safely
-    while (measuredWidth > maxTextWidth && baseFontSize > 18) {
-      baseFontSize -= 2;
-      ctx.font = `bold ${baseFontSize}px system-ui, -apple-system, sans-serif`;
-      measuredWidth = ctx.measureText(this.title || 'Untitled').width;
+    // 1. Dynamic Font Fitting for Primary Title (cached)
+    const titleKey = `${this.title || ''}|${maxTextWidth}|${this.aspectRatioId}`;
+    if (this._titleCacheKey !== titleKey) {
+      const minFontSize = 18;
+      const fontScale = this.aspectRatioId === '16:9' ? 0.038 : (this.aspectRatioId === '1:1' ? 0.042 : 0.048);
+      let sz = Math.round(w * fontScale);
+      ctx.font = `bold ${sz}px system-ui, -apple-system, sans-serif`;
+      while (ctx.measureText(this.title || 'Untitled Track').width > maxTextWidth && sz > minFontSize) {
+        sz -= 2;
+        ctx.font = `bold ${sz}px system-ui, -apple-system, sans-serif`;
+      }
+      this._titleCacheKey = titleKey;
+      this._cachedTitleSize = sz;
     }
+    const baseFontSize = this._cachedTitleSize;
+    ctx.font = `bold ${baseFontSize}px system-ui, -apple-system, sans-serif`;
 
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0,0,0,0.7)';
     ctx.shadowBlur = 15;
-    ctx.fillText(this.title || 'Untitled Track', textX, textY);
+    ctx.fillText(this.title || 'Untitled Track', textX, textY, maxTextWidth);
 
     // Subtitle
     ctx.fillStyle = theme.secondary;
     ctx.font = `500 ${Math.round(baseFontSize * 0.58)}px system-ui, -apple-system, sans-serif`;
-    ctx.fillText(this.author || 'KenEasy Audio', textX, textY + Math.round(baseFontSize * 0.95));
+    ctx.fillText(this.author || 'KenEasy Audio', textX, textY + Math.round(baseFontSize * 0.95), maxTextWidth);
 
     // 2. Timecode & Sleek Progress Bar
     if (this.showTimecode && duration > 0) {
@@ -670,11 +686,11 @@ class VisualizerRenderer {
       ctx.font = `600 ${Math.round(w * (this.aspectRatioId === '16:9' ? 0.022 : 0.028))}px ui-monospace, monospace`;
       ctx.fillStyle = '#f4f7fb';
       ctx.textAlign = 'center';
-      const timeY = h * 0.88;
-      ctx.fillText(timeStr, w * 0.5, timeY);
-
-      const pBarW = w * 0.65;
-      const pBarX = (w - pBarW) * 0.5;
+      const isLand = this.aspectRatioId === '16:9';
+      const pBarW = isLand ? w * 0.42 : w * 0.65;
+      const pBarX = isLand ? w * 0.52 : (w - pBarW) * 0.5;
+      const timeY = isLand ? h * 0.85 : h * 0.88;
+      ctx.fillText(timeStr, isLand ? pBarX + pBarW * 0.5 : w * 0.5, timeY);
       const pBarY = timeY + 18;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.fillRect(pBarX, pBarY, pBarW, 3);

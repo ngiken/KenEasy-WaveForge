@@ -22,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExport = document.getElementById('btn-export');
   const btnLangZh = document.getElementById('btn-lang-zh');
   const btnLangEn = document.getElementById('btn-lang-en');
+  const syncLangUI = (lang = I18N.currentLang) => {
+    btnLangZh.classList.toggle('active', lang === 'zh');
+    btnLangEn.classList.toggle('active', lang === 'en');
+  };
+  syncLangUI();
 
   // Input & Option Controls
   const inputTitle = document.getElementById('input-title');
@@ -80,6 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Engine Instances
   const audioEngine = new AudioEngine();
   const renderer = new VisualizerRenderer(canvas);
+  window.audioEngine = audioEngine;
+  window.renderer = renderer;
   const exporter = new VideoExporter({
     canvas,
     audioEngine,
@@ -93,7 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.createElement('div');
     toast.className = `glass-toast ${type === 'error' ? 'toast-error' : type === 'success' ? 'toast-success' : ''}`;
     const icon = type === 'error' ? '⚠️' : type === 'success' ? '✨' : '💡';
-    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = icon;
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    toast.appendChild(iconSpan);
+    toast.appendChild(msgSpan);
     toastContainer.appendChild(toast);
 
     setTimeout(() => {
@@ -112,13 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update Preview Container Aspect Ratio
     previewWrapper.setAttribute('data-ratio', ratioId);
-    if (ratioId === '9:16') {
-      previewWrapper.style.aspectRatio = '9 / 16';
-    } else if (ratioId === '16:9') {
-      previewWrapper.style.aspectRatio = '16 / 9';
-    } else {
-      previewWrapper.style.aspectRatio = '1 / 1';
-    }
+    previewWrapper.style.aspectRatio = `${config.width} / ${config.height}`;
 
     // Active pill button state
     document.querySelectorAll('[data-ratio]').forEach((btn) => {
@@ -142,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const freqData = audioEngine.getFrequencyData();
-    const timeData = audioEngine.getTimeDomainData();
+    const timeData = renderer.waveStyleId === 'wave' ? audioEngine.getTimeDomainData() : null;
     const currentTime = audioEngine.getCurrentTime();
     const duration = audioEngine.duration;
     const isPlaying = audioEngine.isPlaying;
@@ -219,10 +225,14 @@ document.addEventListener('DOMContentLoaded', () => {
     trimHandleEnd.style.left = `${endPct}%`;
   }
 
+  let lastPlayheadPct = -1;
   function updateTimelinePlayhead(currentTime) {
     if (!timelinePlayhead || audioEngine.duration <= 0) return;
     const playheadPct = Math.min(100, Math.max(0, (currentTime / audioEngine.duration) * 100));
-    timelinePlayhead.style.left = `${playheadPct}%`;
+    if (Math.abs(playheadPct - lastPlayheadPct) > 0.05) {
+      timelinePlayhead.style.left = `${playheadPct}%`;
+      lastPlayheadPct = playheadPct;
+    }
   }
 
   function updateTrimUI() {
@@ -243,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioEngine.duration <= 0) return;
     e.preventDefault();
     e.stopPropagation();
-    activeHandle = handleType;
+    activeHandle = handleType; timelineWrapper._cachedRect = timelineWrapper.getBoundingClientRect();
 
     if (handleType === 'start') trimHandleStart.classList.add('dragging');
     if (handleType === 'end') trimHandleEnd.classList.add('dragging');
@@ -254,13 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function onHandlePointerMove(e) {
     if (!activeHandle || audioEngine.duration <= 0) return;
-    const rect = timelineWrapper.getBoundingClientRect();
+    const rect = timelineWrapper._cachedRect || timelineWrapper.getBoundingClientRect();
     const clientX = e.clientX;
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const targetTime = ratio * audioEngine.duration;
 
     if (activeHandle === 'start') {
-      const safeEnd = Math.max(1, audioEngine.trimEnd - 0.5);
+      const safeEnd = Math.max(0, audioEngine.trimEnd - 0.2);
       const newStart = Math.min(targetTime, safeEnd);
       audioEngine.setTrim(newStart, audioEngine.trimEnd);
     } else if (activeHandle === 'end') {
@@ -303,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     audioInfoBar.style.display = 'flex';
     fileDropZone.classList.add('has-file');
 
-    inputTitle.value = meta.fileName.replace(/\.[^/.]+$/, '');
+    inputTitle.value = meta.fileName;
     renderer.title = inputTitle.value;
 
     updateTrimUI();
@@ -312,6 +322,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadFile(file) {
     if (!file) return;
+    const exts = (window.CONFIG?.LIMITS?.SUPPORTED_AUDIO_EXTENSIONS) || ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+    const validExt = exts.some(ext => (file.name || '').toLowerCase().endsWith(ext));
+    if (!file.type.startsWith('audio/') && !validExt) {
+      showToast(I18N.t('formatNotSupported'), 'error');
+      return;
+    }
+    const maxLimit = (window.CONFIG && CONFIG.LIMITS && CONFIG.LIMITS.MAX_AUDIO_SIZE_BYTES) || (100 * 1024 * 1024);
+    if (file.size > maxLimit) {
+      audioFileInput.value = '';
+      showToast(I18N.t('sizeExceeded'), 'error');
+      return;
+    }
     try {
       fileDropZone.classList.add('loading');
       const meta = await audioEngine.loadAudioFile(file);
@@ -336,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(I18N.t('demoReady'), 'success');
     } catch (e) {
       console.error(e);
-      showToast('Error synthesizing demo track', 'error');
+      showToast(I18N.t('errorSynthesizeDemo'), 'error');
     } finally {
       btnTryDemo.disabled = false;
       btnTryDemo.textContent = I18N.t('tryDemo');
@@ -344,6 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Drag and Drop
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => e.preventDefault());
+
+  fileDropZone.addEventListener('click', (e) => {
+    if (e.target === audioFileInput || e.target.closest('#btn-try-demo')) return;
+    audioFileInput.click();
+  });
+
   fileDropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     fileDropZone.classList.add('drag-over');
@@ -366,9 +396,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnClearAudio.addEventListener('click', () => {
-    audioEngine.stop();
-    audioEngine.audioBuffer = null;
-    audioEngine.duration = 0;
+    audioEngine.reset();
+    inputTitle.value = '';
+    renderer.title = '';
+    updateTrimUI();
+    updateTimelinePlayhead(0);
     audioInfoBar.style.display = 'none';
     fileDropZone.classList.remove('has-file');
     audioFileInput.value = '';
@@ -389,6 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playIcon.textContent = playing ? '⏸' : '▶';
     const textEl = btnPlayPause.querySelector('.btn-label');
     if (textEl) {
+      textEl.setAttribute('data-i18n', playing ? 'pause' : 'play');
       textEl.textContent = playing ? I18N.t('pause') : I18N.t('play');
     }
   };
@@ -468,12 +501,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Custom Background Upload with ObjectURL Memory Management
+  // Architecture: Decouple view trigger for background upload
+  const btnUploadBg = document.getElementById('btn-upload-bg');
+  btnUploadBg?.addEventListener('click', () => {
+    bgFileInput?.click();
+  });
+
   bgFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (currentBgObjectUrl) {
-        URL.revokeObjectURL(currentBgObjectUrl);
+      if (!isSafeImg(file)) {
+        bgFileInput.value = '';
+        showToast(I18N.t('formatNotSupported'), 'error');
+        return;
       }
+      if (currentBgObjectUrl) URL.revokeObjectURL(currentBgObjectUrl);
       currentBgObjectUrl = URL.createObjectURL(file);
       const img = new Image();
       img.onload = () => {
@@ -481,21 +523,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setBgMode('custom-image');
         document.querySelector('[data-bg="custom-image"]')?.click();
       };
+      img.onerror = () => {
+        showToast(I18N.t('formatNotSupported'), 'error');
+      };
       img.src = currentBgObjectUrl;
     }
   });
 
   // Custom Vinyl Cover Upload with ObjectURL Memory Management
+  document.getElementById('btn-upload-cover')?.addEventListener('click', () => {
+    coverFileInput?.click();
+  });
+  const isSafeImg = (f) => f && ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) && f.size <= 20 * 1024 * 1024;
   coverFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (currentCoverObjectUrl) {
-        URL.revokeObjectURL(currentCoverObjectUrl);
-      }
+      if (!isSafeImg(file)) { showToast(I18N.t('formatNotSupported'), 'error'); return; }
+      if (currentCoverObjectUrl) URL.revokeObjectURL(currentCoverObjectUrl);
       currentCoverObjectUrl = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => {
-        renderer.setCoverImage(img);
+      img.onload = () => renderer.setCoverImage(img);
+      img.onerror = () => {
+        if (currentCoverObjectUrl) { URL.revokeObjectURL(currentCoverObjectUrl); currentCoverObjectUrl = null; }
+        showToast(I18N.t('formatNotSupported'), 'error');
       };
       img.src = currentCoverObjectUrl;
     }
@@ -527,6 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = parseFloat(e.target.value);
     valSensitivity.textContent = `${val.toFixed(1)}x`;
     audioEngine.setGain(val);
+    renderer.visualGain = val;
   });
 
   toggleCover.addEventListener('change', (e) => {
@@ -573,6 +624,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       exportedVideoResult = await exporter.startExport();
+      exportProgressFill.style.width = '100%';
+      exportProgressText.textContent = '100%';
+      exportEtaText.textContent = '0s';
       exportSuccessBox.style.display = 'block';
       btnCancelExport.style.display = 'none';
       showToast(I18N.t('toastExportReady'), 'success');
@@ -598,12 +652,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnCloseModal.addEventListener('click', () => {
+    if (exporter.isRecording) exporter.cancel();
     exportModal.classList.remove('open');
   });
 
   // Keyboard Shortcuts (Space for Play/Pause)
   window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+    if (exportModal && exportModal.classList.contains('open')) return;
     if (e.code === 'Space') {
       e.preventDefault();
       btnPlayPause.click();
@@ -627,10 +683,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const lang = e.detail.lang;
     btnLangZh.classList.toggle('active', lang === 'zh');
     btnLangEn.classList.toggle('active', lang === 'en');
+    if (audioEngine.onStateChange) audioEngine.onStateChange(audioEngine.isPlaying);
   });
 
   // Window resize handler for timeline redraw
+  let resizeRaf = null;
   window.addEventListener('resize', () => {
-    drawTimelineWaveform();
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => drawTimelineWaveform());
   });
 });

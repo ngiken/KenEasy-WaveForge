@@ -10,7 +10,6 @@ class VideoExporter {
   constructor({ canvas, audioEngine, renderer, pipCanvas }) {
     this.canvas = canvas;
     this.audioEngine = audioEngine;
-    this.renderer = renderer;
     this.pipCanvas = pipCanvas;
     this.pipCtx = pipCanvas ? pipCanvas.getContext('2d') : null;
 
@@ -50,10 +49,17 @@ class VideoExporter {
     this.isRecording = true;
     this.exportCancelled = false;
     this.recordedChunks = [];
+    this.audioEngine.stop();
 
-    const mimeType = this.detectSupportedMimeType();
-    const isMp4 = mimeType.includes('mp4');
-    const ext = isMp4 ? 'mp4' : 'webm';
+    if (this.pipCanvas && this.canvas && this.canvas.height > 0) {
+      const scale = Math.min(320 / this.canvas.width, 180 / this.canvas.height);
+      this.pipCanvas.width = Math.round(this.canvas.width * scale);
+      this.pipCanvas.height = Math.round(this.canvas.height * scale);
+    }
+
+    let mimeType = this.detectSupportedMimeType();
+    let isMp4 = mimeType.includes('mp4');
+    let ext = isMp4 ? 'mp4' : 'webm';
 
     // 1. Prepare Audio Destination & Tracks
     const audioStreamDest = this.audioEngine.getStreamDestination();
@@ -68,6 +74,7 @@ class VideoExporter {
     if (!videoTrack) {
       throw new Error('Canvas video track could not be obtained');
     }
+    this.videoTrack = videoTrack;
 
     // Combined stream
     const combinedStream = new MediaStream([videoTrack, audioTrack]);
@@ -84,6 +91,11 @@ class VideoExporter {
     } catch (e) {
       console.warn('Failed with bitRate option, retrying with default', e);
       this.mediaRecorder = new MediaRecorder(combinedStream);
+      if (this.mediaRecorder && this.mediaRecorder.mimeType) {
+        mimeType = this.mediaRecorder.mimeType;
+        isMp4 = mimeType.includes('mp4');
+        ext = isMp4 ? 'mp4' : 'webm';
+      }
     }
 
     this.mediaRecorder.ondataavailable = (event) => {
@@ -96,27 +108,40 @@ class VideoExporter {
     const trimEnd = this.audioEngine.trimEnd;
     const exportDuration = Math.max(0.5, trimEnd - trimStart);
     const startTimeStamp = performance.now();
+    let audioEnded = false;
+    let hasStartedPlayback = false;
+    this.audioEngine.onEnded = () => {
+      audioEnded = true;
+      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+        this.mediaRecorder.stop();
+      }
+    };
 
     return new Promise((resolve, reject) => {
       this.mediaRecorder.onstop = () => {
         this.isRecording = false;
+        if (this.playTimer) { clearTimeout(this.playTimer); this.playTimer = null; }
+        if (videoTrack) videoTrack.stop();
+        this.audioEngine.onEnded = null;
         this.audioEngine.stop();
 
         if (this.exportCancelled) {
+          this.recordedChunks = [];
           if (this.onError) this.onError(new Error('Export was cancelled'));
           reject(new Error('Cancelled'));
           return;
         }
 
-        const actualType = mimeType || 'video/webm';
-        const blob = new Blob(this.recordedChunks, { type: actualType });
+        const recordedMime = (this.mediaRecorder && this.mediaRecorder.mimeType) || mimeType || 'video/webm';
+        const actualExt = recordedMime.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(this.recordedChunks, { type: recordedMime });
         const result = {
           blob,
-          ext,
-          mimeType: actualType,
+          ext: actualExt,
+          mimeType: recordedMime,
           sizeBytes: blob.size,
           duration: exportDuration,
-          fileName: `KenEasy-Wave-${Date.now()}.${ext}`,
+          fileName: `KenEasy-Wave-${Date.now()}.${actualExt}`,
         };
 
         if (this.onComplete) this.onComplete(result);
@@ -125,6 +150,9 @@ class VideoExporter {
 
       this.mediaRecorder.onerror = (err) => {
         this.isRecording = false;
+        if (this.playTimer) { clearTimeout(this.playTimer); this.playTimer = null; }
+        if (videoTrack) videoTrack.stop();
+        this.audioEngine.onEnded = null;
         this.audioEngine.stop();
         if (this.onError) this.onError(err);
         reject(err);
@@ -134,28 +162,29 @@ class VideoExporter {
       this.mediaRecorder.start(200);
 
       // Micro-sleep to allow MediaRecorder encoder thread to stabilize before firing audio
-      setTimeout(() => {
+      this.playTimer = setTimeout(() => {
         if (!this.isRecording || this.exportCancelled) return;
         this.audioEngine.play(trimStart);
+        hasStartedPlayback = true;
+        this.playTimer = null;
       }, 35);
 
       // Animation & Progress Tracking Loop + PiP Rendering
+      let lastPipTime = 0;
+      let lastProgressTime = 0;
+
       const trackProgress = () => {
         if (!this.isRecording || this.exportCancelled) return;
 
-        // Render to PiP Mini-Canvas
-        if (this.pipCtx && this.pipCanvas) {
-          this.pipCtx.drawImage(
-            this.canvas,
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height,
-            0,
-            0,
-            this.pipCanvas.width,
-            this.pipCanvas.height
-          );
+        const now = performance.now();
+
+        // Render to PiP Mini-Canvas (throttled to ~15fps)
+        if (this.pipCtx && this.pipCanvas && now - lastPipTime >= 66) {
+          lastPipTime = now;
+          const pw = this.pipCanvas.width;
+          const ph = this.pipCanvas.height;
+          this.pipCtx.clearRect(0, 0, pw, ph);
+          this.pipCtx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 0, 0, pw, ph);
         }
 
         const currentAudioTime = this.audioEngine.getCurrentTime();
@@ -163,14 +192,15 @@ class VideoExporter {
         const progress = Math.min(1.0, elapsedInClip / exportDuration);
 
         // Calculate ETA
-        const elapsedWallTime = (performance.now() - startTimeStamp) / 1000;
+        const elapsedWallTime = (now - startTimeStamp) / 1000;
         let etaSec = 0;
         if (progress > 0.05) {
           const totalEstimatedWall = elapsedWallTime / progress;
           etaSec = Math.max(0, Math.round(totalEstimatedWall - elapsedWallTime));
         }
 
-        if (this.onProgress) {
+        if (this.onProgress && (now - lastProgressTime >= 100 || progress >= 1.0)) {
+          lastProgressTime = now;
           this.onProgress({
             progress,
             elapsedSec: elapsedInClip,
@@ -179,7 +209,7 @@ class VideoExporter {
           });
         }
 
-        if (currentAudioTime >= trimEnd - 0.04 || (!this.audioEngine.isPlaying && elapsedInClip >= exportDuration * 0.95)) {
+        if (hasStartedPlayback && (audioEnded || currentAudioTime >= trimEnd - 0.04 || (!this.audioEngine.isPlaying && elapsedWallTime >= exportDuration))) {
           // Reached end of clip
           if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
             this.mediaRecorder.stop();
@@ -197,6 +227,15 @@ class VideoExporter {
   cancel() {
     if (!this.isRecording) return;
     this.exportCancelled = true;
+    if (this.playTimer) {
+      clearTimeout(this.playTimer);
+      this.playTimer = null;
+    }
+    this.recordedChunks = [];
+    if (this.videoTrack) {
+      try { this.videoTrack.stop(); } catch (e) {}
+      this.videoTrack = null;
+    }
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try {
         this.mediaRecorder.stop();

@@ -168,6 +168,9 @@ const CONFIG = {
   },
 };
 
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CONFIG;
+}
 if (typeof window !== 'undefined') {
   window.CONFIG = CONFIG;
 }

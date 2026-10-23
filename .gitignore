@@ -44,3 +44,8 @@ node_modules/
 # Coverage
 coverage/
 .nyc_output/
+
+# Iterate runtime artifacts
+.iterate/
+iterate.config.yaml
+

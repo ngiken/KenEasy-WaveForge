@@ -27,6 +27,7 @@ const I18N = {
       githubLink: 'GitHub 仓库',
 
       // Panels & Sections
+      sectionAudio: '音频导入与试听',
       sectionRatio: '画幅比例与平台',
       sectionStyle: '波形动态样式',
       sectionTheme: '霓虹配色方案',
@@ -105,6 +106,7 @@ const I18N = {
       audioLoaded: '音频已就绪',
       generatingDemo: '正在合成内置 Lo-Fi 动感音轨...',
       demoReady: '内置 Lo-Fi 示范音轨已载入！点击播放查看跳动',
+      errorSynthesizeDemo: '合成示范音轨发生错误，请重试。',
       formatNotSupported: '不支持该音频格式，请上传标准音频文件。',
       sizeExceeded: '音频文件过大，建议上传小于 100MB 的文件。',
       exportCancelled: '导出已取消。',
@@ -134,6 +136,7 @@ const I18N = {
       githubLink: 'GitHub Repository',
 
       // Panels & Sections
+      sectionAudio: 'Audio Import & Demo',
       sectionRatio: 'Aspect Ratio & Platform',
       sectionStyle: 'Wave Visualizer Style',
       sectionTheme: 'Color Palette',
@@ -212,6 +215,7 @@ const I18N = {
       audioLoaded: 'Audio Loaded and Ready',
       generatingDemo: 'Synthesizing built-in demo track...',
       demoReady: 'Demo Lo-Fi track synthesized! Click Play to watch waves.',
+      errorSynthesizeDemo: 'Error synthesizing demo track, please retry.',
       formatNotSupported: 'Unsupported audio format. Please upload standard audio.',
       sizeExceeded: 'File is too large. Recommended under 100MB.',
       exportCancelled: 'Export cancelled.',
