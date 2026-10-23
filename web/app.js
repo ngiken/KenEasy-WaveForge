@@ -576,7 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
   sliderSensitivity.addEventListener('input', (e) => {
     const val = parseFloat(e.target.value);
     valSensitivity.textContent = `${val.toFixed(1)}x`;
-    audioEngine.setGain(val);
     renderer.visualGain = val;
   });
 

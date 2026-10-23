@@ -53,12 +53,22 @@ class AudioEngine {
       this.gainNode = this.audioCtx.createGain();
       this.gainNode.gain.value = CONFIG.DEFAULTS.audioGain;
 
+      // Safety Dynamics Compressor / Brickwall Limiter to protect speakers and prevent digital clipping
+      this.limiter = this.audioCtx.createDynamicsCompressor();
+      this.limiter.threshold.setValueAtTime(-1.0, this.audioCtx.currentTime);
+      this.limiter.knee.setValueAtTime(0.0, this.audioCtx.currentTime);
+      this.limiter.ratio.setValueAtTime(20.0, this.audioCtx.currentTime);
+      this.limiter.attack.setValueAtTime(0.002, this.audioCtx.currentTime);
+      this.limiter.release.setValueAtTime(0.05, this.audioCtx.currentTime);
+
       // Stream destination for MediaRecorder (video export)
       this.streamDestination = this.audioCtx.createMediaStreamDestination();
 
-      // Audio Graph: Source -> Analyser -> Gain -> Hardware Destination & Stream Destination
+      // Audio Graph: Source -> Analyser -> Gain -> Limiter -> Hardware Destination
+      // And Gain -> Stream Destination (clean video recording)
       this.analyser.connect(this.gainNode);
-      this.gainNode.connect(this.audioCtx.destination);
+      this.gainNode.connect(this.limiter);
+      this.limiter.connect(this.audioCtx.destination);
       this.gainNode.connect(this.streamDestination);
 
       this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
@@ -72,7 +82,7 @@ class AudioEngine {
 
   setGain(val) {
     if (this.gainNode) {
-      this.gainNode.gain.value = Math.max(0, Math.min(2.5, val));
+      this.gainNode.gain.value = Math.max(0, Math.min(1.2, val));
     }
   }
 
@@ -257,6 +267,27 @@ class AudioEngine {
     }
 
     const rendered = await offlineCtx.startRendering();
+
+    // Safety Peak Normalization: normalize buffer to -1.5 dBFS (0.85) to prevent hardware speaker clipping
+    const numChannels = rendered.numberOfChannels;
+    let maxPeak = 0;
+    for (let c = 0; c < numChannels; c++) {
+      const data = rendered.getChannelData(c);
+      for (let i = 0; i < data.length; i++) {
+        const absVal = Math.abs(data[i]);
+        if (absVal > maxPeak) maxPeak = absVal;
+      }
+    }
+    if (maxPeak > 0.85) {
+      const scale = 0.85 / maxPeak;
+      for (let c = 0; c < numChannels; c++) {
+        const data = rendered.getChannelData(c);
+        for (let i = 0; i < data.length; i++) {
+          data[i] *= scale;
+        }
+      }
+    }
+
     this.stop();
     this.audioBuffer = rendered;
     this.fileName = 'KenEasy-Synthwave-Demo';
