@@ -655,10 +655,46 @@ document.addEventListener('DOMContentLoaded', () => {
     exportModal.classList.remove('open');
   });
 
+  // Ecosystem Matrix Modal
+  const btnMatrix = document.getElementById('btn-ecosystem-matrix');
+  const matrixModal = document.getElementById('matrix-modal');
+  const btnCloseMatrix = document.getElementById('btn-close-matrix');
+  const btnCloseMatrixFooter = document.getElementById('btn-close-matrix-footer');
+
+  if (btnMatrix && matrixModal) {
+    btnMatrix.addEventListener('click', () => {
+      matrixModal.classList.add('open');
+    });
+    if (btnCloseMatrix) {
+      btnCloseMatrix.addEventListener('click', () => {
+        matrixModal.classList.remove('open');
+      });
+    }
+    if (btnCloseMatrixFooter) {
+      btnCloseMatrixFooter.addEventListener('click', () => {
+        matrixModal.classList.remove('open');
+      });
+    }
+    matrixModal.addEventListener('click', (e) => {
+      if (e.target === matrixModal) {
+        matrixModal.classList.remove('open');
+      }
+    });
+  }
+
   // Keyboard Shortcuts (Space for Play/Pause)
   window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape') {
+      if (matrixModal && matrixModal.classList.contains('open')) {
+        matrixModal.classList.remove('open');
+      }
+      if (exportModal && exportModal.classList.contains('open') && !exporter.isRecording) {
+        exportModal.classList.remove('open');
+      }
+    }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
     if (exportModal && exportModal.classList.contains('open')) return;
+    if (matrixModal && matrixModal.classList.contains('open')) return;
     if (e.code === 'Space') {
       e.preventDefault();
       btnPlayPause.click();

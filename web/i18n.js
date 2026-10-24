@@ -12,6 +12,38 @@ const I18N = {
       appSubtitle: '极速纯前端音频可视化与动态波形短视频生成器',
       tagline: '本地离线运行 · 零隐私泄漏 · 4K/1080P 超清音画导出',
 
+      // Hero & Tagline (简介与词条)
+      eyebrow: 'A CALMER AUDIO WORKFLOW',
+      heroTitle: '从音频旋律，到高清动态波形短视频。',
+      heroTagline: '导入音频、挑选样式与画幅，一键导出。所有动效渲染与音视频合成都在你的浏览器本地安静完成。',
+      badgeNoInstall: '无需安装',
+      badgeLocal: '100% 本地渲染',
+      badgeMultiRatio: '多端画幅 (9:16/16:9/1:1)',
+      badgePrivacy: '零隐私泄漏',
+
+      // Guarantees (保障词条)
+      trustLocalTitle: '100% 本地渲染',
+      trustLocalText: '音频与视频在浏览器内硬件加速合成，绝不上传',
+      trustRatioTitle: '全平台画幅适配',
+      trustRatioText: '9:16 竖屏、16:9 宽屏与 1:1 黑胶方形任意导出',
+      trustOfflineTitle: '完全离线可用',
+      trustOfflineText: '内置原生引擎与 Lo-Fi 示例曲目，无网络亦可运行',
+
+      // Tips Panel (说明词条)
+      tipsTitle: '格式、视频导出与隐私说明',
+      tip1: '<strong>100% 隐私安全</strong>：全流程使用浏览器 Web Audio API 与 Canvas 离线帧合成，音频与画面<strong>绝不上云</strong>。',
+      tip2: '<strong>多格式与示例曲目</strong>：支持 MP3、WAV、FLAC、M4A、OGG 等格式；若手头暂无音频，可一键点击「试听示例曲目」瞬间体验。',
+      tip3: '<strong>画幅与社交平台适配</strong>：提供 9:16（抖音/小红书/Shorts）、16:9（B站/YouTube）与 1:1（唱片封面/动态Feed），按发布目标一键切换。',
+      tip4: '<strong>拟物黑胶与高阶动效</strong>：黑胶唱片模式搭载拟物铝合金唱针臂与同心微纹路；波形支持贝塞尔平滑渲染与自适应频谱柱。',
+      tip5: '<strong>自由区间截取</strong>：支持双向手柄自由拖动，直接截取高潮 Hook 片段导出，省去第三方剪辑软件二次裁剪。',
+      tip6: '<strong>极速硬件加速导出</strong>：通过原生 MediaRecorder 流式合成，画中画实时监看录制状态，完成后秒级保存为标准 MP4/WebM 视频。',
+
+      // Footer
+      footerNote: '开源 · 纯前端 · 零依赖云端',
+      matrixBtn: '生态矩阵',
+      matrixTitle: 'KenEasy 软件矩阵',
+      matrixSubtitle: '纯本地 · 高隐私 · 开箱即用的独立工具矩阵',
+
       // Navigation / Actions
       tryDemo: '试听示例曲目',
       uploadAudio: '选择或拖拽音频文件',
@@ -120,6 +152,38 @@ const I18N = {
       appName: 'KenEasy WaveForge',
       appSubtitle: 'Pure Client-Side Audio Visualizer & Video Generator',
       tagline: '100% Local & Offline · Zero Data Leakage · Crisp 1080P/4K Video Export',
+
+      // Hero & Tagline (简介与词条)
+      eyebrow: 'A CALMER AUDIO WORKFLOW',
+      heroTitle: 'From Sound to Screen: Dynamic Waveform Videos.',
+      heroTagline: 'Import audio, choose visualizer styles and aspect ratios, export in one pass. Hardware-accelerated and strictly private on your device.',
+      badgeNoInstall: 'No Install',
+      badgeLocal: '100% Local Only',
+      badgeMultiRatio: 'Multi-Ratio (9:16/16:9/1:1)',
+      badgePrivacy: 'Zero Privacy Risk',
+
+      // Guarantees (保障词条)
+      trustLocalTitle: '100% Local Only',
+      trustLocalText: 'Audio analysis and video compositing run on hardware acceleration, never uploaded',
+      trustRatioTitle: 'Multi-Platform Formats',
+      trustRatioText: '9:16 Portrait, 16:9 Landscape & 1:1 Vinyl Square export ready',
+      trustOfflineTitle: 'Offline Ready',
+      trustOfflineText: 'Self-contained browser runtime with built-in Lo-Fi demo, works with no internet',
+
+      // Tips Panel (说明词条)
+      tipsTitle: 'Audio Formats, Video Export & Privacy Notes',
+      tip1: '<strong>100% Private</strong>: Audio processing and video encoding run strictly inside your browser memory — <strong>zero cloud uploads</strong>.',
+      tip2: '<strong>Universal Formats & Built-in Demo</strong>: Supports MP3, WAV, FLAC, M4A, and OGG. Don\'t have audio handy? Click "✨ Try Demo Track" for instant music.',
+      tip3: '<strong>Multi-Platform Ratios</strong>: One-click toggle between 9:16 (TikTok/Shorts/Reels), 16:9 (YouTube/Bilibili), and 1:1 (Vinyl/Square Feed).',
+      tip4: '<strong>Hi-Fi Vinyl & Fluid Curves</strong>: Realistic vinyl record with tonearm lift mechanics, micro-grooves, and Bezier-smoothed waveforms.',
+      tip5: '<strong>Interactive Timeline Trimming</strong>: Drag dual-handle markers to slice the hook or climax segment directly before export.',
+      tip6: '<strong>Hardware-Accelerated Export</strong>: Real-time PiP recording preview, exporting crisp WebM / MP4 video in seconds.',
+
+      // Footer
+      footerNote: 'Open Source · 100% Client-Side · Zero Cloud Dependency',
+      matrixBtn: 'Ecosystem',
+      matrixTitle: 'KenEasy Software Ecosystem',
+      matrixSubtitle: 'Local-first, privacy-driven standalone tool suite',
 
       // Navigation / Actions
       tryDemo: 'Play Demo Track',
@@ -270,6 +334,14 @@ const I18N = {
       const key = el.getAttribute('data-i18n-placeholder');
       if (key) {
         el.placeholder = this.t(key);
+      }
+    });
+
+    const htmlElements = document.querySelectorAll('[data-i18n-html]');
+    htmlElements.forEach((el) => {
+      const key = el.getAttribute('data-i18n-html');
+      if (key) {
+        el.innerHTML = this.t(key);
       }
     });
 

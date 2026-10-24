@@ -19,6 +19,14 @@
       </div>
     </div>
     <div class="header-actions">
+      <button type="button" id="btn-ecosystem-matrix" class="btn-matrix" data-i18n-title="matrixBtn" title="KenEasy 软件矩阵">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <rect x="2" y="2" width="4" height="4" rx="1"></rect><rect x="8" y="2" width="4" height="4" rx="1"></rect><rect x="14" y="2" width="4" height="4" rx="1"></rect>
+          <rect x="2" y="8" width="4" height="4" rx="1"></rect><rect x="8" y="8" width="4" height="4" rx="1"></rect><rect x="14" y="8" width="4" height="4" rx="1"></rect>
+          <rect x="2" y="14" width="4" height="4" rx="1"></rect><rect x="8" y="14" width="4" height="4" rx="1"></rect><rect x="14" y="14" width="4" height="4" rx="1"></rect>
+        </svg>
+        <span data-i18n="matrixBtn">生态矩阵</span>
+      </button>
       <div class="lang-switch">
         <button id="btn-lang-zh" class="lang-btn active">中文</button>
         <button id="btn-lang-en" class="lang-btn">English</button>
@@ -31,6 +39,21 @@
       </a>
     </div>
   </header>
+
+  <!-- Hero Section (简介与词条) -->
+  <section class="hero-section">
+    <div class="hero-copy">
+      <p class="hero-kicker"><span class="kicker-spark"></span><span data-i18n="eyebrow">A CALMER AUDIO WORKFLOW</span></p>
+      <h2 class="hero-title" data-i18n="heroTitle">从音频旋律，到高清动态波形短视频。</h2>
+      <p class="tagline" data-i18n="heroTagline">导入音频、挑选样式与画幅，一键导出。所有动效渲染与音视频合成都在你的浏览器本地安静完成。</p>
+      <div class="hero-badges" data-i18n-aria-label="featuresAria" aria-label="产品特点">
+        <span class="hero-badge"><i class="hero-badge-dot pink"></i><span data-i18n="badgeNoInstall">无需安装</span></span>
+        <span class="hero-badge"><i class="hero-badge-dot blue"></i><span data-i18n="badgeLocal">100% 本地渲染</span></span>
+        <span class="hero-badge"><i class="hero-badge-dot green"></i><span data-i18n="badgeMultiRatio">多端画幅 (9:16/16:9/1:1)</span></span>
+        <span class="hero-badge"><i class="hero-badge-dot blue"></i><span data-i18n="badgePrivacy">零隐私泄漏</span></span>
+      </div>
+    </div>
+  </section>
 
   <!-- Main Grid Workspace -->
   <main class="app-container">
@@ -276,6 +299,73 @@
     </section>
   </main>
 
+  <!-- Supplement Section (保障词条与说明) -->
+  <div class="supplement-wrap">
+    <!-- Trust Grid (保障词条) -->
+    <section class="trust-grid" aria-label="产品保障">
+      <article class="trust-card">
+        <span class="trust-icon trust-icon-blue" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2"></path><rect x="5" y="10" width="14" height="10" rx="3"></rect><path d="m9.5 15 1.6 1.6 3.7-3.7"></path></svg>
+        </span>
+        <div>
+          <strong data-i18n="trustLocalTitle">100% 本地渲染</strong>
+          <p data-i18n="trustLocalText">音频与视频在浏览器内硬件加速合成，绝不上传</p>
+        </div>
+      </article>
+      <article class="trust-card">
+        <span class="trust-icon trust-icon-pink" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        </span>
+        <div>
+          <strong data-i18n="trustRatioTitle">全平台画幅适配</strong>
+          <p data-i18n="trustRatioText">9:16 竖屏、16:9 宽屏与 1:1 黑胶方形任意导出</p>
+        </div>
+      </article>
+      <article class="trust-card">
+        <span class="trust-icon trust-icon-green" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 20h14"></path></svg>
+        </span>
+        <div>
+          <strong data-i18n="trustOfflineTitle">完全离线可用</strong>
+          <p data-i18n="trustOfflineText">内置原生引擎与 Lo-Fi 示例曲目，无网络亦可运行</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Tips & Details Panel (说明词条) -->
+    <details class="tips-panel">
+      <summary class="tips-summary">
+        <span class="summary-title">
+          <span class="info-icon" aria-hidden="true">i</span>
+          <span data-i18n="tipsTitle">格式、视频导出与隐私说明</span>
+        </span>
+        <span class="summary-chevron" aria-hidden="true">
+          <svg viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"></path></svg>
+        </span>
+      </summary>
+      <ul class="tips-list">
+        <li data-i18n-html="tip1"><strong>100% 隐私安全</strong>：全流程使用浏览器 Web Audio API 与 Canvas 离线帧合成，音频与画面<strong>绝不上云</strong>。</li>
+        <li data-i18n-html="tip2"><strong>多格式与示例曲目</strong>：支持 MP3、WAV、FLAC、M4A、OGG 等格式；若手头暂无音频，可一键点击「试听示例曲目」瞬间体验。</li>
+        <li data-i18n-html="tip3"><strong>画幅与社交平台适配</strong>：提供 9:16（抖音/小红书/Shorts）、16:9（B站/YouTube）与 1:1（唱片封面/动态Feed），按发布目标一键切换。</li>
+        <li data-i18n-html="tip4"><strong>拟物黑胶与高阶动效</strong>：黑胶唱片模式搭载拟物铝合金唱针臂与同心微纹路；波形支持贝塞尔平滑渲染与自适应频谱柱。</li>
+        <li data-i18n-html="tip5"><strong>自由区间截取</strong>：支持双向手柄自由拖动，直接截取高潮 Hook 片段导出，省去第三方剪辑软件二次裁剪。</li>
+        <li data-i18n-html="tip6"><strong>极速硬件加速导出</strong>：通过原生 MediaRecorder 流式合成，画中画实时监看录制状态，完成后秒级保存为标准 MP4/WebM 视频。</li>
+      </ul>
+    </details>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-brand">KenEasy WaveForge</span>
+        <span class="footer-note" data-i18n="footerNote">开源 · 纯前端 · 零依赖云端</span>
+      </div>
+      <div class="footer-right">
+        <span>MIT © 2026</span>
+        <a class="footer-link" href="https://github.com/ngiken/KenEasy-WaveForge" target="_blank" rel="noopener noreferrer" data-i18n="githubLink">GitHub 仓库</a>
+      </div>
+    </footer>
+  </div>
+
   <!-- Exporting Progress Modal with Real-time PiP Preview -->
   <div id="export-modal" class="modal-overlay">
     <div class="modal-card">
@@ -306,6 +396,102 @@
       <div style="display:flex; justify-content:center; gap:12px; margin-top:12px;">
         <button id="btn-cancel-export" class="btn-secondary" data-i18n="cancelExport">取消导出</button>
         <button id="btn-close-modal" class="btn-secondary" data-i18n="closeModal">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ecosystem Matrix Modal (全矩阵生态直达) -->
+  <div id="matrix-modal" class="modal-overlay">
+    <div class="matrix-modal-card">
+      <div class="matrix-modal-head">
+        <div>
+          <h3 data-i18n="matrixTitle">KenEasy 软件矩阵</h3>
+          <p data-i18n="matrixSubtitle">纯本地 · 高隐私 · 开箱即用的独立工具矩阵</p>
+        </div>
+        <button id="btn-close-matrix" class="btn-clear" title="Close" style="font-size:18px;">✕</button>
+      </div>
+
+      <div class="matrix-grid">
+        <a href="https://ngiken.github.io/KenEasy-PDF-Converter/" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">📄</span>
+            <span class="matrix-item-title">PDF Converter</span>
+          </div>
+          <p class="matrix-item-desc">浏览器拖拽 Word/图片/文本转 PDF，自由排序合并，纯本地。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">纯前端</span><span class="matrix-tag">离线可用</span><span class="matrix-tag">v0.3.5</span>
+          </div>
+        </a>
+
+        <a href="https://ngiken.github.io/KenEasy-Image-Kit/" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">🖼️</span>
+            <span class="matrix-item-title">Image Kit</span>
+          </div>
+          <p class="matrix-item-desc">浏览器批量压图、改尺寸、转 WebP/JPEG/PNG，打包下载。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">纯前端</span><span class="matrix-tag">批量压图</span><span class="matrix-tag">v0.3.5</span>
+          </div>
+        </a>
+
+        <a href="#" class="matrix-item current" onclick="return false;">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">🎵</span>
+            <span class="matrix-item-title">WaveForge (当前)</span>
+          </div>
+          <p class="matrix-item-desc">极速音频可视化与动态波形短视频生成器，60FPS 渲染导出。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">纯前端</span><span class="matrix-tag">短视频</span><span class="matrix-tag">v1.1.0</span>
+          </div>
+        </a>
+
+        <a href="https://ngiken.github.io/KenEasy-word/" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">📝</span>
+            <span class="matrix-item-title">Word Converter</span>
+          </div>
+          <p class="matrix-item-desc">纯本地 ODT 与异构文档转 Word / TXT，高保真排版排队合并。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">纯前端</span><span class="matrix-tag">ODT转Word</span><span class="matrix-tag">v0.1.0</span>
+          </div>
+        </a>
+
+        <a href="https://chromewebstore.google.com/detail/keneasy-bilicc-exporter/nifdbandikjjmgkagghonjjckmpccgng" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">📺</span>
+            <span class="matrix-item-title">BiliCC Exporter</span>
+          </div>
+          <p class="matrix-item-desc">B 站 CC 字幕一键导出 TXT/SRT，高清音视频后台下载合并。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">Chrome 扩展</span><span class="matrix-tag">官方商店</span><span class="matrix-tag">v3.0.1</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/ngiken/keneasy-desk-aiban" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">🤖</span>
+            <span class="matrix-item-title">桌面爱伴 (AiBan)</span>
+          </div>
+          <p class="matrix-item-desc">本地会说话的桌面 AI 女伴；听、说、可选看屏，内置 MeloTTS。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">桌面客户端</span><span class="matrix-tag">本地大模型</span><span class="matrix-tag">v0.1.0</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/ngiken/KenEasy-AirPilot" target="_blank" rel="noopener noreferrer" class="matrix-item">
+          <div class="matrix-item-head">
+            <span class="matrix-icon">🛸</span>
+            <span class="matrix-item-title">AirPilot (空中领航员)</span>
+          </div>
+          <p class="matrix-item-desc">零痕迹远程 AI 智能体协同工作台，纯 Web 免安装操控本地与异地。</p>
+          <div class="matrix-item-tags">
+            <span class="matrix-tag">远程协作</span><span class="matrix-tag">W3C 沙箱</span><span class="matrix-tag">v1.0.0</span>
+          </div>
+        </a>
+      </div>
+
+      <div style="text-align:center; padding-top:12px; border-top:1px solid var(--border);">
+        <button id="btn-close-matrix-footer" class="btn-secondary" style="padding:6px 20px;">关闭窗口</button>
       </div>
     </div>
   </div>
