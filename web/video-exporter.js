@@ -256,7 +256,7 @@ class VideoExporter {
       if (!name || typeof name !== 'string') return '';
       let s = name.replace(/[\\/:*?"<>|]/g, '').trim();
       s = s.replace(/[. ]+$/, '');
-      s = s.replace(/\.(mp4|webm)$/i, '');
+      s = s.replace(/\.(mp4|webm|mov|mkv|avi|mp3|wav|m4a|aac|ogg|oga|flac|opus|aiff?|wma)$/i, '');
       return s.replace(/[. ]+$/, '').trim();
     };
 
