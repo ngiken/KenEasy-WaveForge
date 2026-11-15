@@ -40,7 +40,7 @@ class VideoExporter {
     return '';
   }
 
-  async startExport(exportOpts = {}) {
+  async startExport({ customName } = {}) {
     if (this.isRecording) return;
     if (!this.audioEngine.audioBuffer) {
       throw new Error('No audio buffer loaded');
@@ -136,20 +136,9 @@ class VideoExporter {
         const actualExt = recordedMime.includes('mp4') ? 'mp4' : 'webm';
         const blob = new Blob(this.recordedChunks, { type: recordedMime });
 
-        let exportFileName = exportOpts?.fileName;
-        if (exportFileName) {
-          exportFileName = exportFileName.replace(/\.(mp4|webm)$/i, '') + '.' + actualExt;
-        } else {
-          const now = new Date();
-          const yyyy = now.getFullYear();
-          const mm = String(now.getMonth() + 1).padStart(2, '0');
-          const dd = String(now.getDate()).padStart(2, '0');
-          const hh = String(now.getHours()).padStart(2, '0');
-          const min = String(now.getMinutes()).padStart(2, '0');
-          const rawTrack = this.audioEngine?.fileName || 'audio';
-          const cleanTrack = rawTrack.replace(/[\\/:*?"<>|]/g, '').replace(/[. ]+$/, '').trim() || 'audio';
-          exportFileName = `waveforge-${yyyy}${mm}${dd}-${hh}${min}-${cleanTrack}.${actualExt}`;
-        }
+        const fileName = (customName && String(customName).trim())
+          ? VideoExporter.buildFileName(customName, this.audioEngine?.fileName, actualExt)
+          : VideoExporter.buildFileName('', this.audioEngine?.fileName, actualExt);
 
         const result = {
           blob,
@@ -157,7 +146,7 @@ class VideoExporter {
           mimeType: recordedMime,
           sizeBytes: blob.size,
           duration: exportDuration,
-          fileName: exportFileName,
+          fileName,
         };
 
         if (this.onComplete) this.onComplete(result);
@@ -259,6 +248,36 @@ class VideoExporter {
     }
     this.audioEngine.stop();
     this.isRecording = false;
+  }
+
+  static buildFileName(customName, trackName, ext) {
+    const cleanExt = String(ext || 'mp4').replace(/^\./, '').trim() || 'mp4';
+    const sanitize = (name) => {
+      if (!name || typeof name !== 'string') return '';
+      let s = name.replace(/[\\/:*?"<>|]/g, '').trim();
+      s = s.replace(/[. ]+$/, '');
+      s = s.replace(/\.(mp4|webm)$/i, '');
+      return s.replace(/[. ]+$/, '').trim();
+    };
+
+    const cleanCustom = sanitize(customName);
+    let baseName = '';
+
+    if (cleanCustom) {
+      baseName = cleanCustom;
+    } else {
+      const cleanTrack = sanitize(trackName) || 'audio';
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      baseName = `waveforge-${yyyy}${mm}${dd}-${hh}${min}-${cleanTrack}`;
+    }
+
+    baseName = baseName.replace(/\.(mp4|webm)$/i, '');
+    return `${baseName}.${cleanExt}`;
   }
 
   static downloadBlob(blob, filename) {

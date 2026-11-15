@@ -83,37 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let exportedVideoResult = null;
   let isTitleCustomized = false;
 
-  function sanitizeFileName(name) {
-    if (!name || typeof name !== 'string') return '';
-    return name.replace(/[\\/:*?"<>|]/g, '').replace(/[. ]+$/, '').trim();
-  }
-
-  function formatExportDate(now = new Date()) {
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    return `${yyyy}${mm}${dd}-${hh}${min}`;
-  }
-
-  function getExportFileName() {
-    const currentTitle = (inputTitle ? inputTitle.value : '').trim();
-    const defaultTrack = (audioEngine?.fileName || '').trim();
-    const userModified = (isTitleCustomized || (currentTitle && defaultTrack && currentTitle !== defaultTrack && currentTitle !== 'KenEasy Soundscape')) && currentTitle.length > 0 && currentTitle !== defaultTrack;
-
-    if (userModified) {
-      const cleanCustom = sanitizeFileName(currentTitle);
-      if (cleanCustom) {
-        return cleanCustom;
-      }
-    }
-
-    const cleanTrack = sanitizeFileName(defaultTrack) || 'audio';
-    const dateStr = formatExportDate();
-    return `waveforge-${dateStr}-${cleanTrack}`;
-  }
-
   // 3. Engine Instances
   const audioEngine = new AudioEngine();
   const renderer = new VisualizerRenderer(canvas);
@@ -125,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderer,
     pipCanvas,
   });
-  window.exporter = exporter;
 
   // 4. Glass Toast Helper
   function showToast(message, type = 'info') {
@@ -658,8 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      const exportName = getExportFileName();
-      exportedVideoResult = await exporter.startExport({ fileName: exportName });
+      exportedVideoResult = await exporter.startExport({ customName: isTitleCustomized ? String(inputTitle.value || '').trim() : '' });
       window.exportedVideoResult = exportedVideoResult;
       exportProgressFill.style.width = '100%';
       exportProgressText.textContent = '100%';
