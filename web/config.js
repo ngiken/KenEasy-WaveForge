@@ -6,7 +6,7 @@
 const CONFIG = {
   APP: {
     NAME: 'KenEasy WaveForge',
-    VERSION: '1.1.1',
+    VERSION: '1.1.2',
     STORAGE_PREFIX: 'keneasy_waveforge_',
     REPO_URL: 'https://github.com/ngiken/KenEasy-WaveForge',
   },

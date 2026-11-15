@@ -40,7 +40,7 @@ class VideoExporter {
     return '';
   }
 
-  async startExport() {
+  async startExport(exportOpts = {}) {
     if (this.isRecording) return;
     if (!this.audioEngine.audioBuffer) {
       throw new Error('No audio buffer loaded');
@@ -135,13 +135,29 @@ class VideoExporter {
         const recordedMime = (this.mediaRecorder && this.mediaRecorder.mimeType) || mimeType || 'video/webm';
         const actualExt = recordedMime.includes('mp4') ? 'mp4' : 'webm';
         const blob = new Blob(this.recordedChunks, { type: recordedMime });
+
+        let exportFileName = exportOpts?.fileName;
+        if (exportFileName) {
+          exportFileName = exportFileName.replace(/\.(mp4|webm)$/i, '') + '.' + actualExt;
+        } else {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          const dd = String(now.getDate()).padStart(2, '0');
+          const hh = String(now.getHours()).padStart(2, '0');
+          const min = String(now.getMinutes()).padStart(2, '0');
+          const rawTrack = this.audioEngine?.fileName || 'audio';
+          const cleanTrack = rawTrack.replace(/[\\/:*?"<>|]/g, '').replace(/[. ]+$/, '').trim() || 'audio';
+          exportFileName = `waveforge-${yyyy}${mm}${dd}-${hh}${min}-${cleanTrack}.${actualExt}`;
+        }
+
         const result = {
           blob,
           ext: actualExt,
           mimeType: recordedMime,
           sizeBytes: blob.size,
           duration: exportDuration,
-          fileName: `KenEasy-Wave-${Date.now()}.${actualExt}`,
+          fileName: exportFileName,
         };
 
         if (this.onComplete) this.onComplete(result);
